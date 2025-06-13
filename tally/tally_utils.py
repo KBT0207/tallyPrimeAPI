@@ -2,15 +2,76 @@ import pyautogui as pg
 import os
 from dotenv import load_dotenv
 import time
-from busy.busy_utils import start_rdc
+# from busy.busy_utils import start_rdc
 from logging_config import logger
 from utils import common_utils
-from busy.busy_utils import find_img, image_click
+from tally.api_utils import rename_latest_file
+from datetime import datetime
+
+from typing import Union
 
 load_dotenv('.env')
 
 pg.FAILSAFE = True
 pg.PAUSE = 1
+
+def back_to_tally_home(times):
+    for _ in range(1, times+1):
+        pg.press('esc')
+        time.sleep(4)
+
+def image_click(img_path:str, key_press:str):
+    location = None
+    while location == None:
+        try:
+            location = pg.locateOnScreen(img_path, confidence=0.9)
+            if location:
+                pg.click(location)
+                time.sleep(0.5)
+                pg.typewrite(key_press)
+                time.sleep(0.5)
+                pg.press('enter')
+                time.sleep(0.5)
+        except:
+            continue
+    pg.moveTo(location,duration=0.1)
+
+def find_img(img:str, timeout:int = None, conf: Union[float, int] = 0.9, gs:bool=False ) -> None:
+    """Function will continue to look for the image for the time given as timeout parameter seconds (default is 10 secs).
+
+    Args:
+        img (str): The image you want to find.
+        timeout(int): Amount of seconds it should take to find the image the image 
+                    if None is given then it waits indefinetly. Defaults to None
+        conf (float, optional): Confidence parameter same as found in 
+                    location methods in Pyautogui. Defaults to 0.9.
+        gs(bool, optional): Grayscale property applied to image or not. Defaults to False 
+    """
+    location = None
+    start_time = time.time()
+    while (location == None) and (timeout is None or (time.time() - start_time) < timeout):
+        try:
+            location = pg.locateOnScreen(img, confidence= conf, grayscale=gs)
+        except Exception:
+            continue
+    pg.moveTo(location,duration=0.1)
+
+def forex_transaction_click_yes():
+    pg.hotkey("ctrl", 'b')
+    time.sleep(2)
+    loc = None
+    while loc == None:
+        try:
+            loc = pg.locateOnScreen("tally/images/forex.png", confidence=0.9)
+            if loc:
+                time.sleep(1)
+                pg.press("enter")
+                time.sleep(1)
+                pg.hotkey("ctrl", 'a')
+                time.sleep(1)
+        except Exception as e:
+            print(f"Error during forex transaction click: {e}")
+        time.sleep(0.5)
 
 def while_close_tally():
     loc = None
@@ -117,522 +178,274 @@ def select_company(company_code):
     pg.typewrite(os.getenv('TALLY_PASSWORD'), interval=0.1)
     pg.press('enter')
 
-
-def select_kbe_company(company_code):
-    find_img('tally/images/tally_start.png', conf=0.95)
-    time.sleep(2)
-    try: 
-        data_server = pg.locateOnScreen('tally/images/tally_data_server.png', confidence=0.9)
-        pg.click(data_server)
-        pg.click()
-    except:
-        pass
-    find_img(f'tally/images/kbe_comp_list.png', conf=0.95)
-    time.sleep(1)
-    pg.typewrite(str(company_code), interval=0.2)
-    find_img(f'tally/images/kbe_{company_code}.png', conf=0.95)
-    pg.click()
-    pg.press("enter")
-    find_img('tally/images/tally_username.png')
-    pg.typewrite(os.getenv('TALLY_USERNAME'), interval=0.1)
-    pg.press('enter')
-    pg.typewrite(os.getenv('TALLY_PASSWORD'), interval=0.1)
-    pg.press('enter')
-
-def select_report(report_type):
-    find_img('tally/images/tally_gateway.png')
-    pg.press("d")
-    find_img('tally/images/display_reports.png')
-    pg.press('a')
-    time.sleep(3)
-    pg.press(report_type)
-    find_img('tally/images/report_particulars.png')
-    pg.press('enter')
-    if report_type in ['y', 'r', 'j']:
-        pg.hotkey('alt','f5')
-        time.sleep(3)
-  
-def change_period(from_date, to_date):
-    find_img('tally/images/report_list.png')
+def APIchange_period(from_date, to_date):
+    find_img('tally/images/apiChangeDate.png')
     time.sleep(2)
     pg.hotkey("alt", "f2")
     pg.typewrite(from_date, interval=0.2)
     pg.press('enter')
+    time.sleep(1)
     pg.typewrite(to_date, interval=0.2)
+    time.sleep(1)
     pg.press('enter')
+    time.sleep(1)
+    find_img('tally/images/data_get.png')
 
-def change_receivables_period(from_date, to_date):
-    find_img('tally/images/remove_line.png')
-    time.sleep(2)
-    pg.hotkey("alt", "f2")
-    pg.typewrite(from_date, interval=0.2)
-    pg.press('enter')
-    pg.typewrite(to_date, interval=0.2)
-    pg.press('enter')
-
-def change_period_balance(from_date, to_date):
-    find_img('tally/images/report_particulars.png')
-    time.sleep(1)
-    pg.hotkey("alt", "f2")
-    pg.typewrite(from_date, interval=0.2)
-    pg.press('enter')
-    pg.typewrite(to_date, interval=0.2)
-    pg.press('enter')
-
-def change_kbe_period_balance(from_date, to_date):
-    find_img('tally/images/kbe_outstanding_data.png')
-    time.sleep(1)
-    pg.hotkey("alt", "f2")
-    pg.typewrite(from_date, interval=0.2)
-    pg.press('enter')
-    pg.typewrite(to_date, interval=0.2)
-    pg.press('enter')
-
-def export_report_data(path, filename):
-    find_img('tally/images/report_list.png')
-    time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
-    time.sleep(2)
-    pg.press('down')
-    time.sleep(1)
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
-
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    time.sleep(1)
-    pg.press('enter')
-    pg.typewrite("Specify Path",interval=0.1)
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter')
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
-
-    pg.hotkey("ctrl", "a")
-    time.sleep(1)
-    pg.press('e')
-
-    find_img(img='tally/images/report_list.png')
-
-def export_report_data_detailed(path, filename, mc:str):
-    forex_curr = ["FCY Frexotic",
-                  "FCY KBE",
-                  "FCY KBEIPL",
-                  "FCY Orbit",
-                  'FCY KBAIPL',
-                  "FCY Freshnova"
-                  ]
-    
-    find_img('tally/images/report_list.png')
-    
-    time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
-    time.sleep(2)
-    pg.press('down')
-    time.sleep(1)
-    if any(keyword in mc for keyword in forex_curr):
-        try:
-            helper_forex_currency()
-        except:
-            pass
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
-
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    time.sleep(1)
-    pg.press('enter')
-    pg.typewrite("Specify Path",interval=0.1)
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter')
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
-    
-    pg.hotkey("ctrl", "a")
-    time.sleep(1)
-    pg.press('e')
-
-    find_img(img='tally/images/report_list.png')
-
-def export_accounts_data(path, filename):
-    find_img('tally/images/accounts.png')
-    time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
-    time.sleep(2)
-    pg.press('down')
-    time.sleep(1)
-    pg.press('enter')
-    pg.typewrite( 'Name (Alias)', interval=0.2)
-    pg.press("enter")
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    pg.press('enter')
-    pg.typewrite("Specify Path",interval=0.1)
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter')
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
-
-    pg.hotkey("ctrl", "a")
-    time.sleep(1)
-    pg.press('e')
-
-    find_img(img='tally/images/accounts.png', conf=0.95)
-
-def export_balance_data(path, filename):
-    find_img('tally/images/remove_line.png')
-    time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
-    time.sleep(1.5)
-    pg.press('down')
-    time.sleep(1)
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
-
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    pg.press('enter')
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter', presses=2, interval=0.4)
-    
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
-
-    pg.hotkey("ctrl", "a")
-    time.sleep(1)
-    pg.press('e')
-
-    find_img(img='tally/images/remove_line.png', conf=0.95)
-
-def export_kbe_balance_data(path, filename):
-    find_img('tally/images/remove_line.png')
-    time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
-    time.sleep(1.5)
-    pg.press('down')
-    time.sleep(1)
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
-    time.sleep(1.5)
-    try:
-        show_currency = pg.locateOnScreen(image= 'tally/images/show_currency.png', confidence= 0.9)
-        pg.click(show_currency)
-        pg.press('enter')
-        print("changed currency to be yes")
-    except:
-        print('passed')
-        pass
-
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    pg.press('enter')
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter', presses=2, interval=0.4)
-    
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
-
-    pg.hotkey("ctrl", "a")
-    time.sleep(1)
-    pg.press('e')
-
-    find_img(img='tally/images/remove_line.png', conf=0.95)
-
-def back_to_tally_home(times):
-    for _ in range(1, times+1):
-        pg.press('esc')
-        time.sleep(3)
-
-def change_company():
+def tally_api_select_report(report_type, from_date, to_date):
     find_img('tally/images/tally_gateway.png')
     time.sleep(1)
-    pg.hotkey('alt', 'f1')
-    time.sleep(1)
-    pg.press('y')
-    time.sleep(1)
-    pg.press('enter')
-
-def accounts():
-    find_img('tally/images/tally_gateway.png')
-    pg.press('h')
-    time.sleep(1.5)
-    pg.typewrite('ledgers', interval=0.1)
-    pg.press('enter')
-    find_img(img='tally/images/ledgers_list.png')
-    pg.press('f5')
-    time.sleep(1)
-    
-def items():
-    find_img('tally/images/tally_gateway.png')
-    pg.press('h')
-    time.sleep(1.5)
-    pg.typewrite('stock items', interval=0.1)
-    pg.press('enter')
-    find_img(img='tally/images/accounts.png')
-    pg.press('f5')
-    time.sleep(2.5)
-
-def outstanding_balance():
-    find_img('tally/images/tally_gateway.png')
-    pg.press('b')
-    time.sleep(1.5)
-    try:
-        assets = pg.locateOnScreen('tally/images/current_assets.png', confidence=0.9)
-        pg.click(assets, duration=0.2)
-        pg.press('enter')
-    except:
-        pg.locateOnScreen('tally/images/sel_current_assets.png', confidence=0.9)
-        pg.press('enter')
-    try:
-        sundry = pg.locateOnScreen('tally/images/sundry.png', confidence=0.9)
-        pg.click(sundry, duration=0.2)
-        pg.press('enter')
-    except:
-        pg.locateOnScreen('tally/images/sel_sundry.png', confidence=0.9)
-        pg.press('enter')
-
-    pg.press('f12')
-    find_img('tally/images/grouping.png')
-    pg.click()
-    pg.typewrite('ledger')
-    pg.press('enter')
-
-    find_img('tally/images/display_name_balance.png')
-    pg.click()
-    pg.typewrite('name only')
-    pg.press('enter')
-    pg.hotkey('ctrl', 'a')
-
-def kbe_outstanding_balance():
-    find_img('tally/images/tally_gateway.png')
-    pg.press('d')
-    time.sleep(1.5)
-    pg.press('s')
-    time.sleep(1.5)
-    pg.press('o')
-    time.sleep(1.5)
-    pg.press('r')
-    time.sleep(1.5)
-
-def receivables():
-    find_img('tally/images/tally_gateway.png')
-    pg.press('d')
-    pg.press('s')
-    time.sleep(0.3)
-    pg.press('o')
-    time.sleep(0.3)
+    pg.press("t")
+    find_img('tally/images/tallyPrimeAPI.png')
     pg.press('g')
-    pg.typewrite('sundry debtors', interval=0.2)
-    pg.press('enter')
-    find_img('tally/images/report_particulars.png')
-    pg.press('f5')
     time.sleep(1)
-    pg.hotkey('ctrl', 'f8')
-    
-def exporting_reports(report:str, from_date:str, to_date:str,  path:str, filename:str, esc:int):
+    find_img('tally/images/tallyAPIGet.png')
     time.sleep(1)
-    select_report(report_type= report)
-    time.sleep(1)
-    change_period(from_date= from_date , to_date= to_date) 
-    time.sleep(1)
-    export_report_data(path= path, filename= filename)
-    time.sleep(3)
-    back_to_tally_home(times=esc)
+    report_functions = {
+        'sales': api_helper_sales,
+        'sales-return': api_helper_sales_return,
+        'purchase': api_helper_purchase,
+        'purchase-return': api_helper_purchase_return,
+        'receipt': api_helper_receipt,
+        'payments': api_helper_payments,
+        'journal': api_helper_journal,
+        'item': api_helper_item,
+        'master': api_helper_master,
+    }
+    helper_function = report_functions.get(report_type)
+    if helper_function:
+        return helper_function(from_date, to_date)
+    else:
+        raise ValueError(f"Invalid report_type: {report_type}")
 
-def fcy_exporting_reports(report:str, from_date:str, to_date:str,  path:str, filename:str, esc:int):
+def api_helper_sales(fromdate, to_date):
+    pg.press('down')
     time.sleep(1)
-    select_report(report_type= report)
+    pg.press("enter")
     time.sleep(1)
-    change_period(from_date= from_date , to_date= to_date) 
+    find_img('tally/images/getAPIDataType.png')
     time.sleep(1)
-    fcy_export_report_data(path= path, filename= filename)
-    time.sleep(1.5)
-    back_to_tally_home(times=esc)
-    
-def helper_forex_currency():
-    while True:
-        try:
-            time.sleep(1)
-            loc = pg.locateOnScreen(r'tally/images/forex.png', confidence=0.9)
-            if loc:
-                pg.click(loc)
-                time.sleep(1)
-                pg.press('enter')
-                break
-        except pg.ImageNotFoundException:
-            print("Forex image not found, retrying...")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
+    try:
         time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_sales.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('u')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
 
-def fcy_export_report_data(path, filename):
-    find_img('tally/images/report_list.png')
+def api_helper_sales_return(fromdate, to_date):
+    pg.press('down')
     time.sleep(1)
-    pg.hotkey('ctrl', 'e')
-    time.sleep(1.5)
-    pg.press('c')
+    pg.press("enter")
+    find_img('tally/images/getAPIDataType.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_sales_return.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('l')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
+
+def api_helper_purchase(fromdate, to_date):
+    pg.press('p')
+    time.sleep(1)
+    find_img('tally/images/getAPIPurchase.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_purchase.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('u')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
+
+def api_helper_purchase_return(fromdate, to_date):
+    pg.press('p')
+    time.sleep(1)
+    find_img('tally/images/getAPIPurchase.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_purchase_return.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('l')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
+
+def api_helper_receipt(fromdate, to_date):
+    pg.press('B')
+    time.sleep(1)
+    find_img('tally/images/getAPIBanking.png')
     time.sleep(2)
-    pg.press('down')
-    time.sleep(1)
-    helper_forex_currency()
-    time.sleep(1)
-    find_img('tally/images/export_settings.png', conf=0.95 )
-    time.sleep(1)
-    pg.click()
-    time.sleep(1)
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite('excel', interval=0.3)
-    pg.press('enter')
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_receipt.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
 
-    find_img("tally/images/folder_path.png")
-    pg.click()
-    time.sleep(1)
-    pg.press('enter')
-    pg.typewrite("Specify Path",interval=0.2)
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    pg.typewrite(path, interval=0.2)
-    pg.press('enter')
-    time.sleep(1)
-    pg.press('enter')
-    time.sleep(1)
-    
-    pg.press('down')
-    pg.press('enter')
-    pg.typewrite(filename, interval=0.2)
-    pg.press('enter')
+    except:
+        pg.press('U')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
 
-    pg.hotkey("ctrl", "a")
+def api_helper_payments(fromdate, to_date):
+    pg.press('b')
     time.sleep(1)
-    pg.press('e')
+    find_img('tally/images/getAPIBanking.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_payment.png")
+        print("DISABLED IMAGES")
+        time.sleep(1)
+        pg.press("esc", presses=3, interval=2)
+        return 'No Reports'
+    except:
+        pg.press('l')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
 
-    find_img(img='tally/images/report_list.png')
-    
-def exporting_reports_detaild(report:str, from_date:str, to_date:str,  path:str, filename:str, esc:int, mc:str):
+def api_helper_journal(fromdate, to_date):
+    pg.press('o')
     time.sleep(1)
-    select_report(report_type= report)
+    find_img('tally/images/getAPIBanking.png')
     time.sleep(1)
-    change_period(from_date= from_date , to_date= to_date) 
-    time.sleep(1)
-    columner()
-    time.sleep(1)
-    export_report_data_detailed(path= path, filename= filename, mc=mc)
-    time.sleep(1.5)
-    back_to_tally_home(times=esc)
-    
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_journal.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('u')
+        time.sleep(1)
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
 
-def columner():
-    time.sleep(0.6)
-    pg.press('f8')
-    
-    find_img("tally/images/columnr.png")
-
-    image_click(img_path='tally/images/vch_type.png', key_press='y')
-    time.sleep(0.5)
-    image_click(img_path='tally/images/vch_no.png', key_press='y')
-    time.sleep(0.5)
-    image_click(img_path='tally/images/vch_ref.png', key_press='y')
+def api_helper_item(fromdate, to_date):
+    pg.press('m')
     time.sleep(1)
+    find_img('tally/images/getAPIMaster.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_item.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('u')
+        time.sleep(1)
+        find_img('tally/images/item.png')
+        return None
+
+def api_helper_master(fromdate, to_date):
+    pg.press('m')
+    time.sleep(1)
+    find_img('tally/images/getAPIMaster.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_master.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports' 
+    except:
+        pg.press('p')
+        time.sleep(1)
+        find_img('tally/images/master.png')
+        return None
+
+def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
+    fcy_list = ["FCY Freshnova", "FCY Frexotic", "FCY KBE", "FCY KBEIPL", "FCY Orbit", "FCY KBAIPL"]
+    print(material_centre)
+    # Check for FCY companies properly
+    invalid_report_types = {"item", "master"}
+
+    if any(fcy in material_centre for fcy in fcy_list) and reports_type not in invalid_report_types:
+        forex_transaction_click_yes()
+
 
     try:
-        ref_date = pg.locateOnScreen('tally/images/vch_ref_date.png', confidence=0.9)
-        time.sleep(0.5)
-        if ref_date:
-            pg.click(ref_date)
+        todate = datetime.strptime(todate, '%d-%m-%Y').date()
+    except ValueError as e:
+        logger.error(f"Invalid date format: {todate}. Expected 'dd-mm-yyyy'. Error: {e}")
+        return
+
+    esc = int(esc)
+    BASE_DIR = r'E:\api_download'
+
+    # Hotkey mappings
+    hotkeys = {
+        'sales': ('alt', 'j'),
+        'sales-return': ('alt', 'u'),
+        'receipt': ('alt', 'u'),
+        'payments': ('alt', 'u'),
+        'journal': ('alt', 'u'),
+        'purchase': ('alt', 'l'),
+        'purchase-return': ('alt', 'l'),
+        'item': ('alt', 'v'),
+        'master': ('alt', 'j'),
+    }
+
+    hotkey = hotkeys.get(reports_type)
+    if hotkey is None:
+        logger.warning(f"Unknown report type: {reports_type}")
+        return
+
+    try:
+        time.sleep(3)
+        if reports_type == 'item':
+            target_img = pg.locateOnScreen('tally/images/target_item.png', confidence=0.9)
+        elif reports_type == 'master':
+            target_img = pg.locateOnScreen('tally/images/target_master.png', confidence=0.9)
+        else:
+            target_img = pg.locateOnScreen('tally/images/no_blank.png', confidence=0.9)
+
+        if target_img:
+            pg.moveTo(target_img, duration=0.2)
             time.sleep(1)
-            pg.typewrite('y')
-            time.sleep(0.5)
-            pg.press('enter')
+            pg.hotkey('ctrl', 'space')
+            time.sleep(1)
+            pg.hotkey(*hotkey)
+            time.sleep(2)
+            find_img('tally/images/upload_success.png')
+            time.sleep(2)
+            rename_latest_file(
+                base_dir=BASE_DIR,
+                material_centre=material_centre,
+                report_type=reports_type,
+                today=todate
+            )
+            time.sleep(1)
+            esc += 2
+            back_to_tally_home(esc)
+            logger.info(f"File renamed for {material_centre} and report type '{reports_type}'")
+            logger.info(f"{material_centre} exported successfully for report '{reports_type}'")
+        else:
+            logger.info("No blank voucher found.")
     except Exception as e:
-        print(f"[!] Error locating ref_date: {e}")
+        back_to_tally_home(esc)
+        logger.warning(f"Voucher export failed for {material_centre} and report type {reports_type}: {e}")
 
-    image_click(img_path='tally/images/qty_details.png', key_press='y')
-    time.sleep(0.5)
-    pg.typewrite('n', interval=0.1)
-    time.sleep(0.5)
-    pg.press('enter')
 
-    for _ in range(3):
-        pg.typewrite('y', interval=0.3)
-        time.sleep(0.5)
-        pg.press('enter')
 
-    time.sleep(2)
-    pg.hotkey('ctrl', 'a')
-    time.sleep(1)
-    pg.hotkey('alt', 'f5')
-    time.sleep(1)

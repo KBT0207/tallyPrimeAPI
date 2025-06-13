@@ -19,8 +19,13 @@ today_date = datetime.now().strftime('%d-%b-%Y').replace(':', '-')
 
 log_directory = 'E:/logs'
 log_file = os.path.join(log_directory, f"main_{today_date}.log")
-if not os.path.exists(log_directory):
-    os.makedirs(log_directory)
+
+# Check if the drive E: exists
+if os.path.exists('E:/'):
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+else:
+    raise FileNotFoundError("Drive E: does not exist.")
 
 
 # Logging configuration

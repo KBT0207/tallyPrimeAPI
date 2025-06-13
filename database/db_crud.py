@@ -3,13 +3,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import insert, delete, and_, func, cast, select, Numeric, Table, text, MetaData, desc
 from logging_config import logger
 from utils.common_utils import tables
-from database.models.busy_models.busy_pricing import BusyPricingKBBIO
-from database.models.busy_models.busy_accounts import (BusyAccounts100x, BusyAccountsAgri, 
-                                                    BusyAccountsGreenEra, BusyAccountsKBBIO,
-                                                    BusyAccountsNewAge)
-from database.models.busy_models.busy_reports import SalesKBBIO, SalesOrderKBBIO
 from sqlalchemy.exc import SQLAlchemyError
-from database.models.tally_models.tally_report_models import TallyAccounts, DebtorsBalance
 from database.models.kbe_models.export_models import ExchangeRate
 
 
@@ -158,72 +152,7 @@ class DatabaseCrud:
 
 
 
-    def import_accounts_data(self, df:pd.DataFrame, commit:bool):
-        
-        df['ledger_name'] = df['ledger_name'].str.title()
-
-        df_material_centre = df["material_centre"][1]
-        
-        if 'NA' in df_material_centre:
-            busy_table = BusyAccountsNewAge
-        elif 'AS' in df_material_centre:
-            busy_table = BusyAccountsAgri
-        elif 'GE' in df_material_centre:
-            busy_table = BusyAccountsGreenEra
-        else:
-            busy_table = BusyAccountsKBBIO
-
-        busy_data = self.Session.query(busy_table.name, busy_table.alias).filter(busy_table.alias != None
-                                    ).with_entities(busy_table.name, busy_table.alias, 
-                                                                 )
-        df_busy_data = pd.DataFrame(busy_data, columns= ['busy_name', 'dealer_code'])
-
-        join_query = self.Session.query(TallyAccounts).filter(TallyAccounts.material_centre == df_material_centre)
-
-        accounts = join_query.with_entities(TallyAccounts.ledger_name, TallyAccounts.alias_code, 
-                                            TallyAccounts.state, TallyAccounts.material_centre,                                 
-                                            )
-        df_accounts = pd.DataFrame(accounts, columns=['ledger_name', 'alias_code', 
-                                                      'state', 'material_centre', 
-                                                    ])
-        
-        df_accounts['ledger_name'] = df_accounts['ledger_name'].str.title()
-
-        new_data = df.merge(df_accounts, how= 'left', on= 'ledger_name', indicator=True)
-        new_data = new_data.loc[new_data['_merge']=='left_only', 
-                                  ['ledger_name', 'under', 'state_x', 'gst_registration_type', 
-                                   'gst_no', 'opening_balance', 'material_centre_x', 
-                                    'alias_code_x',
-                                    ]].replace({pd.NA: None})
-        new_data.columns = new_data.columns.str.rstrip("_x")
-
-        new_data['alias_code'] = new_data['alias_code'].astype(str)
-        df_busy_data['dealer_code'] = df_busy_data['dealer_code'].astype(str)
-        new_data_with_busy_name = new_data.merge(df_busy_data, how= 'left', 
-                                                 left_on= 'alias_code', right_on= 'dealer_code').replace({pd.NA: None})
-
-        if not new_data_with_busy_name.empty: 
-            values = new_data_with_busy_name.to_dict('records')
-            insert_stmt = insert(TallyAccounts).values(values)
-            try:
-                with self.db_engine.connect() as connection:
-                    result = connection.execute(insert_stmt)
-                    logger.info(f"{result.rowcount} rows inserted into tally_accounts.")
-                    if commit:
-                        connection.commit()
-                        logger.info(f"Inserted {result.rowcount} rows into tally_accounts.")
-                    else:
-                        connection.rollback()
-                        logger.info(f"Transaction rollback successfully without any errors as commit was given False.")
-            except SQLAlchemyError as e:
-                logger.critical(f"Error inserting data into tally_accounts: {e}")
-                connection.rollback()
-                logger.error(f"Rolling back changes in tally_accounts due to import error.")
-            except Exception as e:
-                logger.critical(f"Unknown error occurred: {e}")
-        else:
-            logger.info(f"No new data to import in the database.")
-
+    
         
 
     # def import_kbe_accounts_data(self, df:pd.DataFrame, commit:bool):
@@ -383,30 +312,87 @@ class DatabaseCrud:
         
         return rate[0] if rate else 0
 
+    # def delete_tally_material_centre_and_datewise(self, table_name: str, 
+    #                                             start_date: str, end_date: str, 
+    #                                             material_centre:list, commit: bool):
+    #     table_class = tables.get(table_name)
+    #     if not table_class:
+    #         logger.error(f"Table '{table_name}' not found in table mapping. Delete query failed to execute.")
+    #         return
+
+    #     if start_date > end_date:
+    #         logger.error(f"Start date '{start_date}' should be less than or equal to end date '{end_date}'.")
+    #         return
+
+    #     date_condition = table_class.date.between(start_date, end_date)
+    #     material_centre_condition = table_class.material_centre.in_(material_centre)
+    #     delete_query = delete(table_class).where(and_(date_condition, material_centre_condition))
+        
+    #     try:
+    #         with self.db_engine.connect() as connection:
+    #             transaction = connection.begin()
+    #             try:
+    #                 result = connection.execute(delete_query)
+    #                 deleted_count = result.rowcount
+    #                 logger.info(f"Deleted {deleted_count} rows from '{table_name}' between {start_date} and {end_date}.")
+                    
+    #                 if commit:
+    #                     transaction.commit()
+    #                     logger.info("Transaction committed.")
+    #                 else:
+    #                     transaction.rollback()
+    #                     logger.info("Transaction not committed.")
+    #             except SQLAlchemyError as e:
+    #                 transaction.rollback()
+    #                 logger.error(f"Error occurred during deletion: {e}")
+    #     except SQLAlchemyError as e:
+    #         logger.error(f"Connection error: {e}")
+
+
     def delete_tally_material_centre_and_datewise(self, table_name: str, 
-                                                start_date: str, end_date: str, 
-                                                material_centre:list, commit: bool):
+                                              start_date: str = None, end_date: str = None, 
+                                              material_centre: list = None, commit: bool = True):
         table_class = tables.get(table_name)
         if not table_class:
-            logger.error(f"Table '{table_name}' not found in table mapping. Delete query failed to execute.")
+            logger.error(f"Table '{table_name}' not found in table mapping. Delete query failed.")
             return
 
-        if start_date > end_date:
-            logger.error(f"Start date '{start_date}' should be less than or equal to end date '{end_date}'.")
+        from sqlalchemy.inspection import inspect
+        from sqlalchemy.exc import SQLAlchemyError
+
+        # Build dynamic WHERE conditions
+        conditions = []
+
+        # Add material centre condition if applicable
+        if material_centre:
+            conditions.append(table_class.material_centre.in_(material_centre))
+
+        # Check if 'date' column exists before applying date filter
+        table_columns = [col.key for col in inspect(table_class).columns]
+        if 'date' in table_columns and start_date and end_date:
+            if start_date > end_date:
+                logger.error(f"Start date '{start_date}' should be <= end date '{end_date}'.")
+                return
+            conditions.append(table_class.date.between(start_date, end_date))
+        elif start_date or end_date:
+            logger.warning(f"Table '{table_name}' does not support date-based filtering. Skipping date condition.")
+
+        if not conditions:
+            logger.warning("No valid filter conditions provided. Aborting delete operation.")
             return
 
-        date_condition = table_class.date.between(start_date, end_date)
-        material_centre_condition = table_class.material_centre.in_(material_centre)
-        delete_query = delete(table_class).where(and_(date_condition, material_centre_condition))
-        
+        # Construct the delete query
+        delete_query = delete(table_class).where(and_(*conditions))
+
         try:
             with self.db_engine.connect() as connection:
                 transaction = connection.begin()
                 try:
                     result = connection.execute(delete_query)
-                    deleted_count = result.rowcount
-                    logger.info(f"Deleted {deleted_count} rows from '{table_name}' between {start_date} and {end_date}.")
-                    
+                    deleted_count = result.rowcount or 0
+                    logger.info(f"Deleted {deleted_count} rows from '{table_name}' for material centre(s): {material_centre} "
+                                f"{f'between {start_date} and {end_date}' if start_date and end_date else ''}.")
+
                     if commit:
                         transaction.commit()
                         logger.info("Transaction committed.")
@@ -417,4 +403,4 @@ class DatabaseCrud:
                     transaction.rollback()
                     logger.error(f"Error occurred during deletion: {e}")
         except SQLAlchemyError as e:
-            logger.error(f"Connection error: {e}")
+            logger.error(f"Connection error: {e}")

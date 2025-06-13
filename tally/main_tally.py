@@ -2,283 +2,109 @@ import pyautogui as pg
 import os
 import time
 from tally import tally_utils
-from utils.common_utils import tally_reports,company_dict_kaybee_exports, fcy_company, tally_reports_detailed,all_columner_comp
+from utils.common_utils import kb, demo_export
 from datetime import datetime, timedelta
 from logging_config import logger
 
 
+def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
+    valid_companies = []
+    for check_company in company:
+        c = company_validation(check_company, fromdate, todate)
+        print(c)
+        if c is not None:
+            valid_companies.append(c)
 
-
-def exporting_data(company, fromdate:str, todate:str, filename:str):
     from_date_str = datetime.strptime(fromdate, '%Y-%m-%d').strftime('%d-%m-%Y')
     to_date_str = datetime.strptime(todate, '%Y-%m-%d').strftime('%d-%m-%Y')
-    for comp_name in company:
-        time.sleep(2)
-        pg.hotkey("win", "d")
+
+    current_date = datetime.today().date()
+    current_year = current_date.year
+    current_month = current_date.month
+    start_date = datetime.strptime(fromdate, '%Y-%m-%d').date()
+    start_year = start_date.year
+    start_month = start_date.month
+
+
+    logger.info(f"Starting Tally Prime API export from {from_date_str} to {to_date_str} for companies: {valid_companies}")
+
+    for comp in valid_companies:
         time.sleep(1)
+        logger.info(f"Processing company: {comp}")
+
+        pg.hotkey('win', 'd')
+        logger.debug("Sent hotkey to show desktop.")
+
         tally_utils.start_tally()
         logger.info("Tally started...")
+
         time.sleep(1)
-        mc_name = company_dict_kaybee_exports.get(comp_name, "Unknown_Company") 
-        
-        logger.info(f"{comp_name} selected...")
-        
-        tally_utils.select_company(company_code= comp_name)
-        
-        logger.info(f"{comp_name} selected...")
-        
-        for rep in list(tally_reports.keys()):
-            path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports[rep]}"
-            os.makedirs(path, exist_ok=True)
-            tally_utils.exporting_reports(report= rep, 
-                        from_date= from_date_str, to_date= to_date_str,
-                        path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports[rep]}",
-                        filename= f"{mc_name.replace(' ', '_')}_{tally_reports[rep]}_{filename}.xlsx", 
-                        esc= 4)
-            logger.info(f"Exported {tally_reports[rep]} of {mc_name} of {filename}")
-                    
-        # tally_utils.accounts()
-        # path1 = fr"E:\automated_tally_downloads\{mc_name}\accounts"
-        # os.makedirs(path1, exist_ok=True)
-        # tally_utils.export_accounts_data(path= fr"E:\automated_tally_downloads\{mc_name}\accounts",
-        #                 filename= f"{mc_name}_accounts_{filename}.xlsx")    
-
-        # time.sleep(2)
-        # pg.press('esc')
-        # time.sleep(2)
-        # pg.press('esc')
-        # logger.info(f"Exported accounts of {mc_name} of {filename}")
-
-        # tally_utils.change_company()
+        tally_utils.select_company(company_code=comp)
+        mc = kb.get(comp)
+        logger.debug(f"Material Centre for {comp}: {mc}")
+        logger.info(f"Selected company: {comp}")
     
-        # time.sleep(4)
-        # pg.press('esc')
-        # time.sleep(4)
-        # pg.press('y')
-        tally_utils.while_close_tally()
-    
-        logger.info("Tally closed ...")
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return']
+        if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
+            for r in ['item', 'master']:
+                if r not in reports:
+                    reports.append(r)
 
-def exporting_outstanding_balance(company:list, dates:list, monthly:bool):
-    pg.hotkey("win", "d")
-    
-    tally_utils.start_tally()
-    logger.info("Tally started...")
+        # reports = ['receipt','payments','journal']
+        logger.info(f"Starting report export for: {reports}")
 
-    for comp in company:
-        tally_utils.select_company(company_code= comp)
-        logger.info(f"{comp} selected...")
-        
-        tally_utils.outstanding_balance()
-        if monthly:
+        for report in reports:
+            logger.info(f"Generating report: {report}")
+            func_reports = tally_utils.tally_api_select_report(
+                report_type=report,
+                from_date=from_date_str,
+                to_date=to_date_str
+            )
+            logger.debug(f"Report result for {report}: {func_reports}")
 
-            first_day_of_current_month = datetime.today().replace(day=1)
-            previous_month = (first_day_of_current_month - timedelta(days=1)).strftime('%B-%Y')
-            file_path = fr"D:\monthly_data\{comp}\outstanding\{previous_month}"
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
-        else:
-            file_path = fr"D:\automated_tally_downloads\{comp}\outstanding"
-        for date in dates:
-            tally_utils.change_period_balance(from_date= '01-04-2024', to_date= date)
-            tally_utils.export_balance_data(path= file_path, 
-                                            filename= f"{comp}_outstanding_{date}.xlsx")
-            time.sleep(1.5)
+            if func_reports != 'No Reports':
+                logger.info(f"Exporting data for report: {report}")
+                tally_utils.api_exports_data(
+                    reports_type=report,
+                    esc=4,
+                    material_centre=mc,
+                    todate=to_date_str
+                )
+            else:
+                logger.warning(f"No reports found for {report}, skipping...")
 
-        tally_utils.back_to_tally_home(times= 3)
-        logger.info(f"Exported outstanding balance of {comp} of {date}")
-
-        tally_utils.change_company()
-    
-    time.sleep(2)
-    pg.press('esc')
-    time.sleep(2)
-    pg.press('y')
-    logger.info("Tally closed ...")
-
-def exporting_receivables(company:list, dates:list, monthly:bool):
-    pg.hotkey("win", "d")
-    
-    tally_utils.start_tally()
-    logger.info("Tally started...")
-
-    for comp in company:
-        tally_utils.select_company(company_code= comp)
-        logger.info(f"{comp} selected...")
-        
-        tally_utils.receivables()
-        if monthly:
-
-            first_day_of_current_month = datetime.today().replace(day=1)
-            previous_month = (first_day_of_current_month - timedelta(days=1)).strftime('%B-%Y')
-            file_path = fr"D:\monthly_data\{comp}\receivables\{previous_month}"
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
-        else:
-            file_path = fr"D:\automated_tally_downloads\{comp}\receivables"
-        
-        for date in dates:
-            tally_utils.change_receivables_period(from_date= '01-04-2024', to_date= date)
-            tally_utils.export_balance_data(path= fr"D:\monthly_data\{comp}\receivables",
-                            filename= f"{comp}_receivables_{date}.xlsx")
-            time.sleep(1)
-
-        tally_utils.back_to_tally_home(times= 6)
-        logger.info(f"Exported receivables of {comp} of {date}")
-
-        tally_utils.change_company()
-    
-    time.sleep(2)
-    pg.press('esc')
-    time.sleep(2)
-    pg.press('y')
-    logger.info("Tally closed ...")
-
-def exporting_kbe_outstanding(company:list, dates:list):
-    pg.hotkey("win", "d")
-    
-    tally_utils.start_tally()
-    logger.info("Tally started...")
-
-    for comp in company:
-        tally_utils.select_kbe_company(company_code= comp)
-        logger.info(f"{comp} selected...")
-        
-        tally_utils.kbe_outstanding_balance()
-        file_path = fr"D:\automated_kbe_downloads\{comp}\outstanding"
-
-        for date in dates:
-            tally_utils.change_kbe_period_balance(from_date= '01-04-2024', to_date= date)
-            tally_utils.export_kbe_balance_data(path= file_path, 
-                                            filename= f"{comp}_kbe_outstanding_{date}.xlsx")
-            time.sleep(1.5)
-
-        tally_utils.back_to_tally_home(times= 4)
-        logger.info(f"Exported outstanding balance of {comp} of {date}")
-
-        tally_utils.change_company()
-    
-    time.sleep(2)
-    pg.press('esc')
-    time.sleep(2)
-    pg.press('y')
-    logger.info("Tally closed ...")
-
-def exporting_kbe_accounts(company, filename:str):
-    pg.hotkey("win", "d")
-
-    tally_utils.start_tally()
-    logger.info("Tally started...")
-
-    for comp in company:
-        tally_utils.select_kbe_company(company_code= comp)
-        logger.info(f"{comp} selected...")
-
-        tally_utils.accounts()
-        tally_utils.export_accounts_data(path= fr"D:\automated_kbe_downloads\{comp}\accounts",
-                        filename= f"{comp}_kbe_accounts_{filename}.xlsx")    
-
-        time.sleep(2)
         pg.press('esc')
-        time.sleep(2)
+        time.sleep(3)
+        pg.press('y')
+        logger.debug("Exited current screen in Tally.")
+
         pg.press('esc')
-        logger.info(f"Exported accounts of {comp} of {filename}")
+        time.sleep(3)
+        pg.press('y')
+        logger.debug("Exited company in Tally.")
 
-        tally_utils.change_company()
-    
-    time.sleep(2)
-    pg.press('esc')
-    time.sleep(2)
-    pg.press('y')
-    logger.info("Tally closed ...")
-    
-def fcy_exporting_data(company, fromdate:str, todate:str, filename:str):
-    from_date_str = datetime.strptime(fromdate, '%Y-%m-%d').strftime('%d-%m-%Y')
-    to_date_str = datetime.strptime(todate, '%Y-%m-%d').strftime('%d-%m-%Y')
-    
-    for comp_name in company:
-        time.sleep(2)
-        pg.hotkey("win", "d")
-        time.sleep(1)
-        tally_utils.start_tally()
-        logger.info("Tally started...")
-        time.sleep(1)
-        mc_name = fcy_company.get(comp_name, "Unknown_Company") 
-        logger.info(f"{comp_name} selected...")
-        
-        tally_utils.select_company(company_code= comp_name)
-        
-        logger.info(f"{comp_name} selected...")
-        
-        for rep in list(tally_reports.keys()):
-            path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports[rep]}"
-            os.makedirs(path, exist_ok=True)
-            tally_utils.fcy_exporting_reports(report= rep, 
-                        from_date= from_date_str, to_date= to_date_str,
-                        path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports[rep]}",
-                        filename= f"{mc_name.replace(' ', '_')}_{tally_reports[rep]}_{filename}.xlsx", 
-                        esc= 4)
-            logger.info(f"Exported {tally_reports[rep]} of {mc_name} of {filename}")
-                    
-        # tally_utils.accounts()
-        # path1 = fr"E:\automated_tally_downloads\{mc_name}\accounts"
-        # os.makedirs(path1, exist_ok=True)
-        # tally_utils.export_accounts_data(path= fr"E:\automated_tally_downloads\{mc_name}\accounts",
-        #                 filename= f"{mc_name}_accounts_{filename}.xlsx")    
+    logger.info("All companies processed successfully.")
 
-        # time.sleep(2)
-        # pg.press('esc')
-        # time.sleep(2)
-        # pg.press('esc')
-        # logger.info(f"Exported accounts of {mc_name} of {filename}")
-        # time.sleep(2)
-        # pg.press('esc')
-        # time.sleep(2)
-        # pg.press('esc')
-        # logger.info(f"Exported accounts of {mc_name} of {filename}")
 
-        # # tally_utils.change_company()
-    
-        
-        tally_utils.while_close_tally()
-        time.sleep(2)
+def company_validation(company:str, comp_fromdate: str, comp_todate: str):
+    comp = demo_export.get(company)
+    comp_start_date, comp_end_date = comp[1:3]
+    from_dt = datetime.strptime(comp_fromdate, "%Y-%m-%d").date()
+    to_dt = datetime.strptime(comp_todate, "%Y-%m-%d").date()
+    comp_start_date = datetime.strptime(comp_start_date, '%Y-%m-%d').date()
+    comp_end_date = datetime.strptime(comp_end_date, '%Y-%m-%d').date()
+    if (from_dt >= comp_start_date) and (to_dt <= comp_end_date ):
+        return company
+    else:
+        return None
+
+
+
+
+
 
     
-    
-        logger.info("Tally closed ...")
+        
 
-def exporting_data_detailed(company, fromdate:str, todate:str, filename:str):
-    from_date_str = datetime.strptime(fromdate, '%Y-%m-%d').strftime('%d-%m-%Y')
-    to_date_str = datetime.strptime(todate, '%Y-%m-%d').strftime('%d-%m-%Y')
-    for comp_name in company:
-        time.sleep(2)
-        pg.hotkey("win", "d")
-        time.sleep(1)
-        tally_utils.start_tally()
-        logger.info("Tally started...")
-        time.sleep(1)
-        mc_name = all_columner_comp.get(comp_name, "Unknown_Company") 
-        
-        logger.info(f"{comp_name} selected...")
-        
-        tally_utils.select_company(company_code= comp_name)
-        
-        logger.info(f"{comp_name} selected...")
-        
-        for rep in list(tally_reports_detailed.keys()):
-            path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports_detailed[rep]}"
-            os.makedirs(path, exist_ok=True)
-            print(path)
-            tally_utils.exporting_reports_detaild(report= rep, 
-                        from_date= from_date_str, to_date= to_date_str,
-                        path= fr"E:\automated_tally_downloads\{mc_name}\{tally_reports_detailed[rep]}",
-                        filename= f"{mc_name.replace(' ', '_')}_{tally_reports_detailed[rep]}_{filename}.xlsx", 
-                        esc= 4,
-                        mc=mc_name)
-            
-            logger.info(f"Exported {tally_reports_detailed[rep]} of {mc_name} of {filename}")
-                    
-        tally_utils.while_close_tally()
-        time.sleep(2)
-    
-        logger.info("Tally closed ...")
+
+

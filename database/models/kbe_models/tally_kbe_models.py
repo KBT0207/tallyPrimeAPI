@@ -4,201 +4,192 @@ from database.models.base import KBEBase
 
 metadata = MetaData()
 
-class TallySales(KBEBase):
-    __tablename__ = 'tally_sales'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    debit = Column(Float, nullable= False, default=0)
-    credit = Column(Float, nullable= False, default=0)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50),nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallySalesReturn(KBEBase):
-    __tablename__ = 'tally_sales_return'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    debit = Column(Float, nullable= False, default=0)
-    credit = Column(Float, nullable= False, default=0)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyPurchase(KBEBase):
-    __tablename__ = 'tally_purchase'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    debit = Column(Float, nullable= False, default=0)
-    credit = Column(Float, nullable= False, default=0)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyPurchaseReturn(KBEBase):
-    __tablename__ = 'tally_purchase_return'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    debit = Column(Float, nullable= False, default=0)
-    credit = Column(Float, nullable= False, default=0)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyPayment(KBEBase):
-    __tablename__ = 'tally_payments'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    material_centre = Column(String(50), nullable=False)
-    amount = Column(Float, nullable=False)
-    amount_type = Column(String(10), nullable=True)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyReceipts(KBEBase):
-    __tablename__ = 'tally_receipts'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    material_centre = Column(String(50), nullable=False)
-    amount = Column(Float, nullable=False)
-    amount_type = Column(String(10), nullable=True)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyJournal(KBEBase):
-    __tablename__ = 'tally_journal'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    material_centre = Column(String(50), nullable=False)
-    amount = Column(Float, nullable=False)
-    amount_type = Column(String(10), nullable=True)
-    material_centre = Column(String(50), nullable=False)
-    currency = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyAccounts(KBEBase):
-    __tablename__ = 'tally_accounts'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    ledger_name = Column(String(250), nullable= False)
-    alias_code = Column(String(100), nullable= True)
-    under = Column(String(100), nullable= False)
-    state = Column(String(50), nullable=True)
-    gst_registration_type = Column(String(100), nullable= True)
-    gst_no = Column(String(100), nullable=True)
-    opening_balance = Column(BigInteger, nullable=True)
-    busy_name = Column(String(250), nullable= True)
-    dealer_code = Column(String(100), nullable= True)
-    material_centre = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-
-class TallyItems(KBEBase):
-    __tablename__ = 'tally_items'
-    
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    item_name = Column(String(250), nullable= False)
-    under = Column(String(100), nullable= False)
-    units = Column(String(50), nullable= False)
-    opening_qty = Column(Float, nullable= False)
-    rate = Column(Float, nullable= False)
-    per = Column(String(50), nullable= False)
-    opening_balance = Column(Float, nullable=False, default=0)
-    material_centre = Column(String(50), nullable=False)
-    fcy = Column(String(50), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-
-# Tally KBE DETAILED COLS
-
 
 class TallySalesDetailed(KBEBase):
     __tablename__ = 'tally_sales_detailed'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    date = Column(Date, nullable=False)
+    voucher_no = Column(String(100), nullable=False)
+    bill_ref_no = Column(String(255), nullable=False)
+    voucher_type = Column(String(100), nullable=False)
+    particulars = Column(String(255), nullable=False)
+
+    item = Column(String(255), nullable=False)
+    qty = Column(Float, nullable=False)
+    unit = Column(String(50), nullable=False)
+    rate = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
+    discount = Column(Float, nullable=True)
+
+    cgst_amt = Column(Float, nullable=False)
+    sgst_amt = Column(Float, nullable=False)
+    igst_amt = Column(Float, nullable=False)
     
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    voucher_ref_no = Column(String(100), nullable= False)
-    item = Column(String(255), nullable= False)
-    qty = Column(Float, nullable= False, default=0)
-    rate = Column(Float, nullable= False, default=0)
-    rate_currency = Column(String(255), nullable= False)
-    value = Column(Float, nullable= False, default=0)
-    gross_total = Column(Float, nullable= False, default=0)
-    other_deduction = Column(Float, nullable= False, default=0)
+    freight_amt = Column(Float, nullable=False)
+    dca_amt = Column(Float, nullable=False)
+    cf_amt = Column(Float, nullable=False)
+
+    other_amt = Column(Float, nullable=False)
+    total_amt = Column(Float, nullable=False)
+
     material_centre = Column(String(50), nullable=False)
-    fcy = Column(String(50),nullable=False)
+    currency = Column(String(50), nullable=True)
+    fcy = Column(String(50), nullable=False)
+    
+    despatch_doc_no = Column(String(500), nullable=True)
+    port_of_loading = Column(String(500), nullable=True)
+    port_of_discharge = Column(String(500), nullable=True)
+    narration = Column(String(600), nullable=True)
+    
     created_at = Column(DateTime, server_default=func.now())
-
-
 
 class TallySalesReturnDetailed(KBEBase):
     __tablename__ = 'tally_sales_return_detailed'
-    id = Column(Integer, primary_key= True, autoincrement= True, index= True)
-    date = Column(Date, nullable= False)
-    particulars = Column(String(255), nullable= False)
-    voucher_type = Column(String(100), nullable= False)
-    voucher_no = Column(String(100), nullable= False)
-    voucher_ref_no = Column(String(100), nullable= False)
-    item = Column(String(255), nullable= False)
-    qty = Column(Float, nullable= False, default=0)
-    rate = Column(Float, nullable= False, default=0)
-    rate_currency = Column(String(255), nullable= False)
-    value = Column(Float, nullable= False, default=0)
-    gross_total = Column(Float, nullable= False, default=0)
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    date = Column(Date, nullable=False)
+    voucher_no = Column(String(100), nullable=False)
+    bill_ref_no = Column(String(255), nullable=False)
+    voucher_type = Column(String(100), nullable=False)
+    particulars = Column(String(255), nullable=False)
+
+    item = Column(String(255), nullable=False)
+    qty = Column(Float, nullable=False, default=0)
+    unit = Column(String(50), nullable=False)
+    rate = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
+    discount = Column(Float, nullable=True)
+
+    cgst_amt = Column(Float, nullable=False)
+    sgst_amt = Column(Float, nullable=False)
+    igst_amt = Column(Float, nullable=False)
+    
+    freight_amt = Column(Float, nullable=False)
+    dca_amt = Column(Float, nullable=False)
+    cf_amt = Column(Float, nullable=False)
+
+    other_amt = Column(Float, nullable=False)
+    total_amt = Column(Float, nullable=False)
+
     material_centre = Column(String(50), nullable=False)
-    fcy = Column(String(50),nullable=False)
+    currency = Column(String(50), nullable=True)
+    fcy = Column(String(50), nullable=False)
+
+    narration = Column(String(600), nullable=True)
+    
     created_at = Column(DateTime, server_default=func.now())
 
+class TallyPurchaseDetailed(KBEBase):
+    __tablename__ = 'tally_purchase_detailed'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    date = Column(Date, nullable=False)
+    voucher_no = Column(String(100), nullable=False)
+    voucher_type = Column(String(100), nullable=False)
+    particulars = Column(String(255), nullable=False)
+    party_gstin = Column(String(50), nullable=True)
+
+    item = Column(String(255), nullable=False)
+    unit = Column(String(50), nullable=False)
+    qty = Column(Float, nullable=False)
+    rate = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
     
+    cgst_amt = Column(Float, nullable=False)
+    sgst_amt = Column(Float, nullable=False)
+    igst_amt = Column(Float, nullable=False)
+    discount = Column(Float, nullable=False)
+
+    freight_amt = Column(Float, nullable=False)
+    dca_amt = Column(Float, nullable=False)
+    cf_amt = Column(Float, nullable=False)
+
+    other_amt = Column(Float, nullable=False)
+    total_amt = Column(Float, nullable=False)
+
+    material_centre = Column(String(50), nullable=False)
+    currency = Column(String(10), nullable=True)
+    fcy = Column(String(50), nullable=False)
+    narration = Column(String(600), nullable=True)
+
+    created_at = Column(DateTime, server_default=func.now())
+
+class TallyPurchaseReturnDetailed(KBEBase):
+    __tablename__ = 'tally_purchase_return_detailed'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+
+    date = Column(Date, nullable=False)
+    voucher_no = Column(String(100), nullable=False)
+    voucher_type = Column(String(100), nullable=False)
+    particulars = Column(String(255), nullable=False)
+    party_gstin = Column(String(50), nullable=True)
+
+    item = Column(String(255), nullable=False)
+    unit = Column(String(50), nullable=False)
+    qty = Column(Float, nullable=False)
+    rate = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
+    
+    cgst_amt = Column(Float, nullable=False)
+    sgst_amt = Column(Float, nullable=False)
+    igst_amt = Column(Float, nullable=False)
+
+    freight_amt = Column(Float, nullable=False)
+    dca_amt = Column(Float, nullable=False)
+    cf_amt = Column(Float, nullable=False)
+
+    other_amt = Column(Float, nullable=False)
+    total_amt = Column(Float, nullable=False)
+
+    material_centre = Column(String(50), nullable=False)
+    currency = Column(String(10), nullable=True)
+    fcy = Column(String(50), nullable=False)
+    narration = Column(String(600), nullable=True)
+
+    created_at = Column(DateTime, server_default=func.now())
+    
+class TallyMasters(KBEBase):
+    __tablename__ = 'tally_masters'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    party_name = Column(String(255), nullable=False)
+    party_alias = Column(String(255), nullable=True)
+    parent = Column(String(255), nullable=True)
+    address = Column(String(255), nullable=True)
+    address_2 = Column(String(255), nullable=True)
+    address_3 = Column(String(255), nullable=True)
+    address_4 = Column(String(255), nullable=True)
+    state = Column(String(255), nullable=True)
+    country = Column(String(255), nullable=True)
+    pin_code = Column(String(255), nullable=True)
+    pan = Column(String(255), nullable=True)
+    registration_type = Column(String(255), nullable=True)
+    gstin = Column(String(40), nullable=True)
+    contact_person = Column(String(255), nullable=True)
+    mobile = Column(String(255), nullable=True)
+    phone_no = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    email_cc = Column(String(255), nullable=True)
+    credit_period = Column(String(255), nullable=True)
+    material_centre = Column(String(255), nullable=False)
+    fcy = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+class TallyItems(KBEBase):
+    __tablename__ = 'tally_items'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    item_name = Column(String(255), nullable=False)
+    item_alias = Column(String(255), nullable=True)
+    parent = Column(String(255), nullable=True)
+    unit = Column(String(50), nullable=False)
+    cgst = Column(Float, nullable=False)
+    sgst = Column(Float, nullable=False)
+    igst = Column(Float, nullable=False)
+    type_of_supply = Column(String(100), nullable=True)
+    material_centre = Column(String(255), nullable=False)
+    fcy = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())

@@ -1,9 +1,10 @@
 """This module contain functions that will used as helper/common functions in the report modules 
 """
 import calendar
-from datetime import datetime
-import psutil
+from datetime import datetime, date, timedelta
+from dateutil.relativedelta import relativedelta
 
+import psutil
 
 def is_process_running(process_name:str) -> bool:
     """This method will check whether a specific process is running or not.
@@ -22,39 +23,62 @@ def is_process_running(process_name:str) -> bool:
 
 
 
-from database.models.busy_models.busy_accounts import (BusyAccounts100x,
-                                                       BusyAccountsAgri,
-                                                       BusyAccountsGreenEra,
-                                                       BusyAccountsKBBIO,
-                                                       BusyAccountsNewAge)
-from database.models.busy_models.busy_items import (BusyItems100x,
-                                                    BusyItemsAgri,
-                                                    BusyItemsGreenEra,
-                                                    BusyItemsKBBIO,
-                                                    BusyItemsNewAge)
-from database.models.busy_models.busy_pricing import BusyPricingKBBIO
-from database.models.busy_models.busy_reports import (MITPKBBIO, MRFPKBBIO,
-                                                      SalesKBBIO, SalesOrderKBBIO, SalesReturnKBBIO, 
-                                                      Production, StockJournal, StockTransfer, PurchaseKBBIO, PurchaseReturnKBBIO )
-from database.models.kbe_models.tally_kbe_models import (
-    TallyAccounts, TallyJournal,
-    TallyPayment, TallyPurchase, TallyPurchaseReturn, TallyReceipts,
-    TallySales, TallySalesReturn,TallySalesDetailed, TallySalesReturnDetailed)
 
-from database.models.kbe_models.export_models import KBEOutstanding, ExchangeRate
+def get_specific_fiscal_quarter_date(q_number: int):
+    today = datetime.today().date()
+    month = today.month
+    year = today.year
 
-from database.models.trackwick.trackwick_models import (TrackwickEmployees, TrackwickSubDealerLiquidationTasks, 
-                                                        TrackwickFarmerLiquidationTasks, TrackwickDealerCollectionTasks, 
-                                                        TrackwickDealerSalesOrderTasks, TrackwickFeedbackTasks, 
-                                                        TrackwickCarTravelExpenses, TrackwickBikeTravelExpenses, 
-                                                        TrackwickOtherTravelExpenses, 
-                                                        )
+    # Determine current fiscal quarter and fiscal year
+    if 4 <= month <= 6:
+        current_q = 1
+        fiscal_year = year
+    elif 7 <= month <= 9:
+        current_q = 2
+        fiscal_year = year
+    elif 10 <= month <= 12:
+        current_q = 3
+        fiscal_year = year
+    else:  # Jan to Mar
+        current_q = 4
+        fiscal_year = year - 1
+
+    # Backtrack to target quarter
+    target_q = current_q
+    target_year = fiscal_year
+    for _ in range(q_number - 1):
+        target_q -= 1
+        if target_q == 0:
+            target_q = 4
+            target_year -= 1
+
+    # Get quarter start and end dates
+    if target_q == 1:
+        start = datetime(target_year, 4, 1).date()
+        end = datetime(target_year, 6, 30).date()
+    elif target_q == 2:
+        start = datetime(target_year, 7, 1).date()
+        end = datetime(target_year, 9, 30).date()
+    elif target_q == 3:
+        start = datetime(target_year, 10, 1).date()
+        end = datetime(target_year, 12, 31).date()
+    else:  # Q4
+        start = datetime(target_year + 1, 1, 1).date()
+        end = datetime(target_year + 1, 3, 31).date()
+
+    # If this is the current quarter, use today as the end date
+    if target_q == current_q and target_year == fiscal_year:
+        end = today
+
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 
-# from database.models.busy_models.busy_accounts_rm import (BusyAccountsKBBIORM)
-from database.models.busy_models.busy_reports_rm import (RMMITPKBBIO,RMMRFPKBBIO,RMProduction,RMStockJournal,RMStockTransfer,RMPurchaseReturnKBBIO,RMPurchaseKBBIO,RMPurchaseOrder)
-from database.models.busy_models.busy_accounts_rm import BusyAccountsKBBIORM
-from database.models.busy_models.busy_item_rm import BusyItemsKBBIORM
+
+
+from database.models.kbe_models.tally_kbe_models import (TallySalesDetailed,TallyPurchaseDetailed, TallyPurchaseReturnDetailed,TallySalesReturnDetailed,
+                                                         TallyMasters,TallyItems
+                                                         )
+
 
 
 def batch_date(month: int, batch: int, year: int = datetime.today().year) -> list:
@@ -94,316 +118,40 @@ def batch_date(month: int, batch: int, year: int = datetime.today().year) -> lis
 
 
 
+tally_tables = { 
+                "tally_purchase_detailed": TallyPurchaseDetailed,
+                'tally_purchase_return_detailed':TallyPurchaseReturnDetailed,
+                "tally_sales_detailed":TallySalesDetailed,
+                'tally_sales_return_detailed':TallySalesReturnDetailed,
+                'tally_masters':TallyMasters,
+                'tally_items':TallyItems,
+                }
 
-busy_tables = {'busy_sales': SalesKBBIO, 'busy_sales_order': SalesOrderKBBIO, 'busy_sales_return': SalesReturnKBBIO, 
-               "busy_mitp": MITPKBBIO, "busy_mrfp": MRFPKBBIO, 
-                "busy_acc_kbbio": BusyAccountsKBBIO, "busy_acc_100x": BusyAccounts100x, "busy_acc_agri": BusyAccountsAgri,
-                "busy_acc_greenera": BusyAccountsGreenEra, "busy_acc_newage": BusyAccountsNewAge, 
-                "busy_items_kbbio": BusyItemsKBBIO, "busy_items_100x": BusyItems100x,  "busy_items_agri": BusyItemsAgri,
-                "busy_items_greenera": BusyItemsGreenEra, "busy_items_newage": BusyItemsNewAge, 
-                "production": Production, "busy_stock_transfer": StockTransfer, "busy_stock_journal": StockJournal, 
-                "busy_purchase": PurchaseKBBIO, "busy_purchase_return": PurchaseReturnKBBIO, 
-            }
-
-busyrm_tables = {
-    "busyrm_purchase": RMPurchaseKBBIO, 'busyrm_purchase_order':RMPurchaseOrder,
-    "busyrm_purchase_return":RMPurchaseReturnKBBIO,
-
-    'busyrm_stock_journal':RMStockJournal, 'busyrm_stock_transfer':RMStockTransfer,
-    'busyrm_production':RMProduction,
-
-    'busyrm_mrfp':RMMRFPKBBIO, 'busyrm_mitp':RMMITPKBBIO,
-
-    "busyrm_acc":BusyAccountsKBBIORM,
-    "busyrm_items":BusyItemsKBBIORM,
-
-
+report_table_map = {
+    'sales': "tally_sales_detailed",
+    'sales-return': 'tally_sales_return_detailed',
+    'purchase': "tally_purchase_detailed",
+    'purchase-return': 'tally_purchase_return_detailed',
+    'item':"tally_items",
+    'master':"tally_masters",
 }
 
-tally_tables = {"tally_sales": TallySales, "tally_sales_return": TallySalesReturn, 
-                "tally_purchase": TallyPurchase, "tally_purchase_return": TallyPurchaseReturn, 
-                "tally_payments": TallyPayment, "tally_receipts": TallyReceipts, "tally_journal": TallyJournal, 
-                "tally_accounts": TallyAccounts,"tally_sales_detailed":TallySalesDetailed,'tally_sales_return_detailed':TallySalesReturnDetailed
-                }
-
-kbe_tables = {"outstanding_balance": KBEOutstanding, "exchange_rate": ExchangeRate,}
-
-# other_tables = {"busy_pricing_kbbio": BusyPricingKBBIO, "test_table": TestTable,
-#                }
-
-trackwick_tables = {"trackwick_employees": TrackwickEmployees, 
-                    'trackwick_sub_dealer_liquidation_tasks': TrackwickSubDealerLiquidationTasks, 
-                    'trackwick_farmer_liquidation_tasks': TrackwickFarmerLiquidationTasks, 
-                    'trackwick_dealer_collection_tasks': TrackwickDealerCollectionTasks, 
-                    'trackwick_dealer_sales_order_tasks': TrackwickDealerSalesOrderTasks, 
-                    'trackwick_feedback_tasks': TrackwickFeedbackTasks, 
-                    "trackwick_car_travel_expense": TrackwickCarTravelExpenses, 
-                    "trackwick_bike_travel_expense": TrackwickBikeTravelExpenses, 
-                    "trackwick_other_travel_expense": TrackwickOtherTravelExpenses, 
-                    }
-
-
-tables = {**tally_tables,**busyrm_tables}
-
-
-tally_reports = {
-                's': 'sales', 
-                'e': 'sales-return',
-                'p': "purchase" , 
-                'd': 'purchase-return',
-                'y': "payments",
-                'r': 'receipts', 'j': 'journal',
-                }
-
-
-tally_reports_detailed = {
-                's': 'sales-detailed', 
-                'e': 'sales-return-detailed',
-                }
         
 
-volume_discount_scheme = {}
+tables = {**tally_tables}
 
-
-tally_comp_codes = {
-                    10001: "Pune",
-                    10002: "Pune" , 
-                    10003: "Indore", 
-                    10004: "Jejuri", 
-                    10005: "Nashik", 
-                    10007: "Hubli",                     
-                    10008: "Raipur", 
-                    10009: "Vijaywada", 
-                    10010: "Ahmedabad",
-                    10011: "Hyderabad", 
-                    10012: "Lucknow", 
-                    10014: "NA Phaltan", 
-                    10016: "Karnal", 
-                    10017: "GE Phaltan", 
-                    10018: "100x Phaltan", 
-                    10019: "Jaipur", 
-                    10020: "Khorda", 
-                    10021: "AS Phaltan", 
-                    10022: "Bhatinda",
-                    10023: "NA Hubli", 
-                    # 20000: "Phaltan",  
-                    20001: "Phaltan", 
-                    # 91820: "Phaltan",
-                    }
-
-
-acc_comp_codes = {
-                    10001: "Pune",
-                    10002: "Baner" , 
-                    10003: "Indore",
-                    10004: "Jejuri",
-                    10005: "Nashik", 
-                    10007: "Hubli",                     
-                    10008: "Raipur", 
-                    10009: "Vijaywada", 
-                    10010: "Ahmedabad", 
-                    10011: "Hyderabad", 
-                    10012: "Lucknow", 
-                    10014: "NA Phaltan", 
-                    10016: "Karnal", 
-                    10017: "GE Phaltan", 
-                    10018: "100x Phaltan",
-                    10019: "Jaipur", 
-                    10020: "Khorda", 
-                    10021: "AS Phaltan", 
-                    10022: "Bhatinda",
-                    10023: "NA Hubli", 
-                    20001: "Phaltan", 
-                    }
-
-
-balance_comp_codes = {
-                    10001: "Pune",
-                    # 10002: "Baner" , 
-                    10003: "Indore",
-                    # 10004: "Jejuri",
-                    10005: "Nashik", 
-                    10007: "Hubli",                     
-                    10008: "Raipur", 
-                    10009: "Vijaywada", 
-                    10010: "Ahmedabad", 
-                    10011: "Hyderabad", 
-                    10012: "Lucknow", 
-                    10014: "NA Phaltan", 
-                    10016: "Karnal", 
-                    10017: "GE Phaltan", 
-                    # 10018: "100x Phaltan",
-                    10019: "Jaipur", 
-                    10020: "Khorda", 
-                    10021: "AS Phaltan", 
-                    10022: "Bhatinda",
-                    10023: "NA Hubli", 
-                    20001: "Phaltan", 
-                    }
-
-
-kbe_outstanding_comp_codes = {
-                    10000: "KBFruit",
-                    10001: "Frex",
-                    10003: "Orbit",
-                    10004: "KBAgro",
-                    10005: "KBEIPL", 
-                    12022: "KBE",                     
-                    92021: "KBVeg", 
-                            }
-
-
-receivables_comp_codes = {
-                    # 10001: "Pune",
-                    10002: "Baner" , 
-                    10003: "Indore",
-                    # 10004: "Jejuri",
-                    10005: "Nashik", 
-                    10007: "Hubli",                     
-                    10008: "Raipur", 
-                    10009: "Vijaywada", 
-                    10010: "Ahmedabad", 
-                    10011: "Hyderabad", 
-                    10012: "Lucknow", 
-                    10014: "NA Phaltan", 
-                    10016: "Karnal", 
-                    10017: "GE Phaltan", 
-                    # 10018: "100x Phaltan",
-                    10019: "Jaipur", 
-                    10020: "Khorda", 
-                    10021: "AS Phaltan", 
-                    10022: "Bhatinda",
-                    10023: "NA Hubli", 
-                    20001: "Phaltan", 
-                    }
-
-
-company_dict_kaybee_exports = {
-    # 'KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)':'Phaltan KBEIPL',
-    # 'Kay Bee Exports - Agri Division Phaltan 21-22':'Phaltan NA KBE',
-    # 'KAY BEE EXPORTS (PHALTAN) FY21-22':'Phaltan A KBE',
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": "Thane KBEIPL",
-    # "Fab Fresh Fruits": "Thane Fab Fresh",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": "Nagar KBEIPL",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": "Vashi KBEIPL",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Gujarat)": "Gujarat KBEIPL",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (CARGO)": "Cargo KBEIPL",
-    # "Kay Bee Exports - Thane (From Apr-24)": "Thane KBE",
-    # "Kay Bee Exports - Vashi FY 2022-23 & 23-24": "Vashi KBE",
-    # "Kay Bee Exports - Nagar Non Agri Divsion - FY 2021-22": "Nagar NA KBE",
-    # "Kay Bee Exports - Agri Div. Nagar - FY2022-23 & 2023-24": "Nagar A KBE",
-    # "Kay Bee Exports - Gujarat - FY2021-22": "Gujarat KBE",
-    # "KAY BEE EXPORTS-MP FY 2021-22": "MP KBE",
-    # "KAY BEE EXPORTS (JDS)": "JDS KBE",
-    # "KAY BEE CARGO": "Cargo KBE",
-    # "Orbit Exports (MH) from Apr-24": "Thane Orbit",
-    # "Orbit Exports (Gujarat)": "Gujarat Orbit",    
-    # "Frexotic Foods (From Apr-24)": "Thane Frexotic",
-    
-    "Kay Bee Agro International Pvt Ltd (GJ)": "Gujarat KBAIPL",
-    "Kay Bee Agro International Pvt Ltd (MH)": "Thane KBAIPL",
-    "Kay Bee Agro International Pvt Ltd (MP)": "MP KBAIPL",
-    "Kay Bee Farm Management Services Pvt Ltd": "MP KBFMSPL",
-    "Fruit & Veg Private Limited": "MP F&VPL",
-    "KAY BEE FRESH VEG & FRUIT PVT LTD": "MP KBFV&FPL",
-    "Kay Bee Veg Pvt Ltd": "MP KBVPL",
-    "Kay Bee Agro Farms Pvt Ltd - (From 1-Apr-2016)": "Thane KBAFPL",
-    "Kay Bee veg Ltd - FY 2020-21": "UK KB Veg",
-    "KAY BEE FRUITS INC": "USA KB Fruits",
-    "Aamrica Fresh Private Limited": "Thane Aamrica",
-    "Freshnova Private Limited": "Thane Freshnova",
-    "Kay Bee Fresh LLP": "Thane KB Fresh",
-    "Perfect Produce Partners": "Thane Perfect Produce",
-    "Indifuit": "Thane Indifruit",
-    }
-
-fcy_company = {
-    "Freshnova Pvt Ltd (FCY)": "FCY Freshnova",
+kb = {
     "Frexotic Foods (FCY)": "FCY Frexotic",
     "Kay Bee Exports (FCY) FROM 20-21": "FCY KBE",
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": "FCY KBEIPL",
     "Orbit Exports (FCY)": "FCY Orbit",
     "Kay Bee Agro International Pvt Ltd (FCY)": "FCY KBAIPL",
-    'Freshnova Pvt Ltd (FCY)':'FCY Freshnova',
-}
-
-
-all_columner_comp = {
-    # "Frexotic Foods (FCY)": "FCY Frexotic",
-    # "Kay Bee Exports (FCY) FROM 20-21": "FCY KBE",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": "FCY KBEIPL",
-    # "Orbit Exports (FCY)": "FCY Orbit",
-    # "Kay Bee Agro International Pvt Ltd (FCY)": "FCY KBAIPL",
-    # "Kay Bee veg Ltd - FY 2020-21": "UK KB Veg",
-    # 'Freshnova Pvt Ltd (FCY)':'FCY Freshnova',
-    
-    # 'KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)':'Phaltan KBEIPL',
-    # 'Kay Bee Exports - Agri Division Phaltan 21-22':'Phaltan NA KBE',
-    # 'KAY BEE EXPORTS (PHALTAN) FY21-22':'Phaltan A KBE',
-
+    "Freshnova Pvt Ltd (FCY)": "FCY Freshnova", 
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": "Thane KBEIPL",
     "Fab Fresh Fruits": "Thane Fab Fresh",
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": "Nagar KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": "Vashi KBEIPL",
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Gujarat)": "Gujarat KBEIPL",
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (CARGO)": "Cargo KBEIPL",
-    "Kay Bee Exports - Thane (From Apr-24)": "Thane KBE",
-    "Kay Bee Exports - Vashi FY 2022-23 & 23-24": "Vashi KBE",
-    "Kay Bee Exports - Nagar Non Agri Divsion - FY 2021-22": "Nagar NA KBE",
-    "Kay Bee Exports - Agri Div. Nagar - FY2022-23 & 2023-24": "Nagar A KBE",
-    "Kay Bee Exports - Gujarat - FY2021-22": "Gujarat KBE",
-
-    # "KAY BEE EXPORTS-MP FY 2021-22": "MP KBE",
-    # "KAY BEE EXPORTS (JDS)": "JDS KBE",
-    # "KAY BEE CARGO": "Cargo KBE",
-    # "Orbit Exports (MH) from Apr-24": "Thane Orbit",
-    # "Orbit Exports (Gujarat)": "Gujarat Orbit",    
-    # "Frexotic Foods (From Apr-24)": "Thane Frexotic",
-    # "Kay Bee Agro International Pvt Ltd (GJ)": "Gujarat KBAIPL",
-    # "Kay Bee Agro International Pvt Ltd (MH)": "Thane KBAIPL",
-    # "Kay Bee Agro International Pvt Ltd (MP)": "MP KBAIPL",
-    # "Kay Bee Farm Management Services Pvt Ltd": "MP KBFMSPL",
-    # "Fruit & Veg Private Limited": "MP F&VPL",
-    # "KAY BEE FRESH VEG & FRUIT PVT LTD": "MP KBFV&FPL",
-    # "Kay Bee Veg Pvt Ltd": "MP KBVPL",
-    # "Kay Bee Agro Farms Pvt Ltd - (From 1-Apr-2016)": "Thane KBAFPL",
-    # "Kay Bee veg Ltd - FY 2020-21": "UK KB Veg",
-    # "KAY BEE FRUITS INC": "USA KB Fruits",
-    # "Aamrica Fresh Private Limited": "Thane Aamrica",
-    # "Freshnova Private Limited": "Thane Freshnova",
-    # "Kay Bee Fresh LLP": "Thane KB Fresh",
-    # "Perfect Produce Partners": "Thane Perfect Produce",
-    # "Indifuit": "Thane Indifruit",
-}
-
-fcy_company = {
-    "Frexotic Foods (FCY)": "FCY Frexotic",
-    "Kay Bee Exports (FCY) FROM 20-21": "FCY KBE",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": "FCY KBEIPL",
-    "Orbit Exports (FCY)": "FCY Orbit",
-    "Kay Bee Agro International Pvt Ltd (FCY)": "FCY KBAIPL",
-}
-
-
-all_columner_comp = {
-    "Frexotic Foods (FCY)": "FCY Frexotic",
-    "Kay Bee Exports (FCY) FROM 20-21": "FCY KBE",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": "FCY KBEIPL",
-    "Orbit Exports (FCY)": "FCY Orbit",
-    "Kay Bee Agro International Pvt Ltd (FCY)": "FCY KBAIPL",
-    "Kay Bee veg Ltd - FY 2020-21": "UK KB Veg",
-    
-    'KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)':'Phaltan KBEIPL',
-    'Kay Bee Exports - Agri Division Phaltan 21-22':'Phaltan NA KBE',
-    'KAY BEE EXPORTS (PHALTAN) FY21-22':'Phaltan A KBE',
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": "Thane KBEIPL",
-    "Fab Fresh Fruits": "Thane Fab Fresh",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": "Nagar KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": "Vashi KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Gujarat)": "Gujarat KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (CARGO)": "Cargo KBEIPL",
-    "Kay Bee Exports - Thane (From Apr-24)": "Thane KBE",
-    "Kay Bee Exports - Vashi FY 2022-23 & 23-24": "Vashi KBE",
     "Kay Bee Exports - Nagar Non Agri Divsion - FY 2021-22": "Nagar NA KBE",
     "Kay Bee Exports - Agri Div. Nagar - FY2022-23 & 2023-24": "Nagar A KBE",
     "Kay Bee Exports - Gujarat - FY2021-22": "Gujarat KBE",
@@ -413,7 +161,6 @@ all_columner_comp = {
     "Orbit Exports (MH) from Apr-24": "Thane Orbit",
     "Orbit Exports (Gujarat)": "Gujarat Orbit",    
     "Frexotic Foods (From Apr-24)": "Thane Frexotic",
-    
     "Kay Bee Agro International Pvt Ltd (GJ)": "Gujarat KBAIPL",
     "Kay Bee Agro International Pvt Ltd (MH)": "Thane KBAIPL",
     "Kay Bee Agro International Pvt Ltd (MP)": "MP KBAIPL",
@@ -422,49 +169,92 @@ all_columner_comp = {
     "KAY BEE FRESH VEG & FRUIT PVT LTD": "MP KBFV&FPL",
     "Kay Bee Veg Pvt Ltd": "MP KBVPL",
     "Kay Bee Agro Farms Pvt Ltd - (From 1-Apr-2016)": "Thane KBAFPL",
-    "Kay Bee veg Ltd - FY 2020-21": "UK KB Veg",
-    "KAY BEE FRUITS INC": "USA KB Fruits",
     "Aamrica Fresh Private Limited": "Thane Aamrica",
-    "Freshnova Private Limited": "Thane Fresh Nova",
+    "Freshnova Private Limited": "Thane Freshnova",
     "Kay Bee Fresh LLP": "Thane KB Fresh",
     "Perfect Produce Partners": "Thane Perfect Produce",
     "Indifuit": "Thane Indifruit",
+    "KAY BEE FRUITS INC": "USA KB Fruits",
+    "Kay Bee Exports - Thane (From Apr-24)": "Thane KBE",
+    "Kay Bee Exports - Vashi FY 2022-23 & 23-24": "Vashi KBE",
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": "Vashi KBEIPL",
+    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-25)": "UK KB Veg",
+    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-20)": "UK KB Veg",
+    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)": "Phaltan KBEIPL",
+    # "Kay Bee Exports - Agri Division Phaltan 21-22": "Phaltan NA KBE",
+    # "KAY BEE EXPORTS (PHALTAN) FY21-22": "Phaltan A KBE",
 }
 
-kaybee_exports_currency = {
-    'Phaltan KBEIPL':'INR',
-    'Phaltan NA KBE':'INR',
-    'Phaltan A KBE': "INR",
-    "Thane Fab Fresh": "INR",
-    "Thane KBEIPL": "INR",
-    "Nagar KBEIPL": "INR",
-    "Vashi KBEIPL": "INR",
-    "Gujarat KBEIPL": "INR",
-    "Cargo KBEIPL": "INR",
-    "Thane KBE": "INR",
-    "Vashi KBE": "INR",
-    "Nagar NA KBE": "INR",
-    "Nagar A KBE": "INR",
-    "Gujarat KBE": "INR",
-    "MP KBE": "INR",
-    "JDS KBE": "INR",
-    "Cargo KBE": "INR",
-    "Thane Orbit": "INR",
-    "Gujarat Orbit": "INR",
-    "Thane Frexotic": "INR",
-    "Gujarat KBAIPL": "INR",
-    "Thane KBAIPL": "INR",
-    "MP KBAIPL": "INR",
-    "MP KBFMSPL": "INR",
-    "MP F&VPL": "INR",
-    "MP KBFV&FPL": "INR",
-    "MP KBVPL": "INR",
-    "Thane KBAFPL": "INR",
-    "UK KB Veg": "GBP",
-    "USA KB Fruits": "USD",
-    "Thane Aamrica": "INR",
-    "Thane Freshnova": "INR",
-    "Thane KB Fresh": "INR",
-    "Thane Perfect Produce": "INR",
-    "Thane Indifruit": "INR",
+
+
+current_date = datetime.today().date().strftime("%Y-%m-%d")
+
+demo_export = {
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": ["Vashi KBEIPL","2022-04-01", current_date],
+    "Kay Bee Exports - Vashi FY 2022-23 & 23-24": ["Vashi KBE","2022-04-01", current_date],
+    "Kay Bee Exports - Thane (From Apr-24)": ["Thane KBE","2024-04-01", current_date],
+    "KAY BEE FRUITS INC": ["USA KB Fruits","2023-04-01", current_date],
+    "Indifuit": ["Thane Indifruit","2024-04-01", current_date],
+    "Perfect Produce Partners": ["Thane Perfect Produce","2024-04-01", current_date],
+    "Kay Bee Fresh LLP": ["Thane KB Fresh","2015-04-01", current_date],
+    "Freshnova Private Limited": ["Thane Freshnova","2013-04-01", current_date],
+    "Aamrica Fresh Private Limited": ["Thane Aamrica","2024-04-01", current_date],
+    "Kay Bee Agro Farms Pvt Ltd - (From 1-Apr-2016)": ["Thane KBAFPL","2016-04-01", current_date],
+    "Kay Bee Veg Pvt Ltd": ["MP KBVPL","2013-04-01", current_date],
+    "KAY BEE FRESH VEG & FRUIT PVT LTD": ["MP KBFV&FPL","2013-04-01", current_date],
+    "Fruit & Veg Private Limited": ["MP F&VPL","2013-04-01", current_date],
+    "Kay Bee Farm Management Services Pvt Ltd": ["MP KBFMSPL","2012-04-01", current_date],
+    "Kay Bee Agro International Pvt Ltd (MP)": ["MP KBAIPL","2017-04-01", current_date],
+    "Frexotic Foods (FCY)": ["FCY Frexotic", "2014-04-01", current_date],
+    "Kay Bee Exports (FCY) FROM 20-21": ["FCY KBE", '2020-04-01', current_date],
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": ["FCY KBEIPL",'2022-04-01', current_date],
+    "Orbit Exports (FCY)": ["FCY Orbit",'2014-04-01', current_date],
+    "Kay Bee Agro International Pvt Ltd (FCY)": ["FCY KBAIPL",'2019-04-01', current_date],
+    "Freshnova Pvt Ltd (FCY)": ["FCY Freshnova",'2024-04-01', current_date], 
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": ["Thane KBEIPL",'2024-04-01',current_date],
+    "Fab Fresh Fruits": ["Thane Fab Fresh",'2024-04-01',current_date],
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": ["Nagar KBEIPL",'2024-04-01',current_date],
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Gujarat)": ["Gujarat KBEIPL",'2022-04-01',current_date],
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (CARGO)": ["Cargo KBEIPL",'2024-04-01',current_date],
+    "Kay Bee Exports - Nagar Non Agri Divsion - FY 2021-22": ["Nagar NA KBE",'2021-04-01', current_date],
+    "Kay Bee Exports - Agri Div. Nagar - FY2022-23 & 2023-24": ["Nagar A KBE",'2022-04-01',current_date],
+    "Kay Bee Exports - Gujarat - FY2021-22": ["Gujarat KBE",'2021-04-01', current_date],
+    "KAY BEE EXPORTS-MP FY 2021-22": ["MP KBE",'2021-04-01', current_date],  
+    "KAY BEE EXPORTS (JDS)": ["JDS KBE",'2021-04-01', current_date],
+    "KAY BEE CARGO": ["Cargo KBE",'2021-04-01', current_date],
+    "Orbit Exports (MH) from Apr-24": ["Thane Orbit",'2024-04-01',current_date],
+    "Orbit Exports (Gujarat)": ["Gujarat Orbit",'2024-04-01',current_date], 
+    "Frexotic Foods (From Apr-24)": ["Thane Frexotic",'2024-04-01',current_date],  
+    "Kay Bee Agro International Pvt Ltd (GJ)": ["Gujarat KBAIPL",'2013-04-01',current_date],
+    "Kay Bee Agro International Pvt Ltd (MH)": ["Thane KBAIPL",'2023-04-01',current_date],
+    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-20)": ["UK KB Veg", '2020-04-01', '2025-03-31'],
+    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-25)": ["UK KB Veg", '2025-04-01', current_date],
+}
+
+
+comp_details = {
+    'KAY BEE VEG 10-11':'UK1',
+    'KAY BEE VEG - (11-12)':'UK2',
+    'KAY BEE VEG - (12-13)':'UK3',
+    'KAY BEE VEG - (13-14)':'UK4',
+    'KAY BEE VEG - (15-17)':'UK5',
+    'KAY BEE VEG - (17-19)':'UK6',
+    'KAY BEE VEG - FY 2019-20':'UK7',
+    'KAY BEE VEG - FY 2020-21 - (from 1-Apr-20)':'UK8',
+    'KAY BEE VEG - FY 2020-21 - (from 1-Apr-25)':'UK9',
+}
+
+
+mc_map = {
+
+    'UK1':['UK KB Veg', '2010-04-01','2011-03-31'],
+    'UK2':['UK KB Veg', '2011-04-01','2012-03-31'],
+    'UK2':['UK KB Veg', '2011-04-01','2012-03-31'],
+    'UK3':['UK KB Veg', '2012-04-01','2013-03-31'],
+    'UK4':['UK KB Veg', '2014-04-01','2015-03-31'],
+    'UK5':['UK KB Veg', '2015-04-01','2017-03-31'],
+    'UK6':['UK KB Veg', '2017-04-01','2019-03-31'],
+    'UK7':['UK KB Veg', '2019-04-01','2020-03-31'],
+    'UK8':['UK KB Veg', '2020-04-01','2025-03-31'],
+    'UK9':['UK KB Veg', '2025-04-01','2026-03-31'],
 }
