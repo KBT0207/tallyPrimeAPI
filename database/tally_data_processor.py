@@ -34,7 +34,7 @@ pd.set_option('future.no_silent_downcasting', True)
 
 
 today = datetime.today().strftime('%d-%m-%Y')
-
+warnings.filterwarnings('ignore')
 
 def APISalesVoucher(file_path: str, material_centre_name: str):
     try:
@@ -270,6 +270,7 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         if col not in df_final.columns:
             df_final[col] = None
     df_final = df_final[final_columns]
+    df_final = df_final.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
     
     df_final.replace([float('inf'), float('-inf')], np.nan, inplace=True)
     return df_final
@@ -488,6 +489,7 @@ def APIPurchaseVoucher(file_path: str, material_centre_name: str):
 
     df['narration'] = df['narration'].str[:500]
     df = df[final_col]
+    df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
     return df
 
 def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
@@ -737,6 +739,7 @@ def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
         if col not in df.columns:
             df[col] = None
     df = df[final_col]
+    df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
 
     return df
 
@@ -971,6 +974,7 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
 
     df_final['narration'] = df_final['narration'].str[:500]
     df_final = df_final[final_columns]
+    df_final = df_final.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
     return df_final
 
 def APIMaster(file_path: str, material_centre_name: str):
@@ -1003,11 +1007,10 @@ def APIMaster(file_path: str, material_centre_name: str):
     # when exported error
 
 
-
-
-
     for col in ['party_name', 'party_alias', 'parent', 'address', 'address_2', 'address_3', 'address_4']:
         df[col] = df[col].apply(clean_string)
+
+    df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
 
 
     df = df.where(pd.notnull(df), None)
@@ -1049,7 +1052,15 @@ def APIItems(file_path: str, material_centre_name: str):
 
         df["material_centre"] = material_centre_name
         
-        df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')    
+        df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
+        df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+        cols = ['item_name', 'item_alias', 'parent', 'unit']
+        for col in cols:
+            if col in df.columns:
+                df[col] = df[col].apply(clean_string)
+            else:
+                print(f"Column '{col}' not found")
+    
 
         return df
 
@@ -1057,6 +1068,84 @@ def APIItems(file_path: str, material_centre_name: str):
         print(f"Error during data transformation: {e}")
         return None
 
+def APIReceiptVoucher(file_path: str, material_centre_name: str):
+    try:
+        data = json_data_convert_amount_in_string(file_path)
+        raw_data = data['ENVELOPE']['Body']
+    except Exception as e:
+        print(f'Error loading data: {e}')
+        return pd.DataFrame()
+
+    for voucher in raw_data:
+        voucher.setdefault('Ledger', [])
+        voucher.setdefault('Bank Details', [])
+        for ledger in voucher['Ledger']:
+            ledger.setdefault('Bill Allocations', [])
+
+    meta_cols = [col for col in raw_data[0].keys() if col not in ['Ledger', 'Bank Details', 'Bill Allocations']]
+
+    df = pd.json_normalize(
+        raw_data,
+        record_path='Ledger',
+        meta=meta_cols,
+        errors='ignore'
+    )
+
+    if df.empty:
+        print("No data found in JSON.")
+        return pd.DataFrame()
+
+
+    df['Receipt No'] = df.get('Receipt No', '').fillna('Blank')
+    df['Rate Of Exchange'] = df.get('Rate Of Exchange', '')
+    df['material_centre'] = material_centre_name
+
+    df['Amount'] = df['Amount'].str.replace(r'[^\d.\-]', '', regex=True)
+    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce').fillna(0).round(2)
+
+    df['Rate Of Exchange'] = df['Rate Of Exchange'].astype(str).str.replace("₹", "")
+
+    df['currency'] = df['Rate Of Exchange'].str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
+    df['currency'] = df['currency'].map(symbol_to_currency).fillna("Unknown")
+    df['currency'] = df['currency'].str.replace('Unknown', "").replace("", np.nan)
+
+    df['currency'] = np.where(df['currency'].isnull(), df['material_centre'].map(curr), df['currency'])
+    df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
+
+    df['Rate Of Exchange'] = df['Rate Of Exchange'].str.replace(r'[^\d.\-]', '', regex=True)
+    df['Rate Of Exchange'] = pd.to_numeric(df['Rate Of Exchange'], errors='coerce').fillna(0).round(2)
+
+    df['Amount Type'] = df['Amount Type'].map({'Cr': "Credit", 'Dr': "Debit"})
+
+    cols = ['Amount', 'Forex Amount']
+    df.loc[df['Amount Type'] == 'Debit', cols] *= -1
+
+    df.columns = df.columns.str.lower().str.replace(" ", "_", regex=False)
+    cols_rename = {
+        "partyname": "party_name", 'amount':"inr_amount",
+        "receipt_date":"date",'receipt_no':"voucher_no"
+        }
+    df.rename(columns=cols_rename, inplace=True)
+    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
+    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+
+    final_cols = [
+        'date', 'voucher_no', 'party_name', 'inr_amount',
+        'forex_amount', 'rate_of_exchange', 'amount_type',
+        'currency', 'fcy', 'material_centre','narration'
+    ]
+
+    for col in final_cols:
+        if col not in df.columns:
+            df[col] = None
+
+    df['narration'] = df['narration'].str[:500]
+
+    df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+
+    df = df[final_cols]
+
+    return df
 
 
 
@@ -1089,6 +1178,17 @@ class TallyDataProcessor:
 
         if report_type in ['master']:
              df = APIMaster(file_path=self.excel_file_path, material_centre_name=company_code)
+
+        if report_type in ['receipt']:
+             df = APIReceiptVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
+
+        # if report_type in ['payments']:
+        #      df = (file_path=self.excel_file_path, material_centre_name=company_code)
+        # if report_type in ['journal']:
+        #      df = (file_path=self.excel_file_path, material_centre_name=company_code)
+        
+        
+        
         
         
         if df is None:

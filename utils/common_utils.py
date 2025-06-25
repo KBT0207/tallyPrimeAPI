@@ -76,7 +76,7 @@ def get_specific_fiscal_quarter_date(q_number: int):
 
 
 from database.models.kbe_models.tally_kbe_models import (TallySalesDetailed,TallyPurchaseDetailed, TallyPurchaseReturnDetailed,TallySalesReturnDetailed,
-                                                         TallyMasters,TallyItems
+                                                         TallyMasters,TallyItems,TallyItemsMapping,TallyReceipt
                                                          )
 
 
@@ -125,6 +125,8 @@ tally_tables = {
                 'tally_sales_return_detailed':TallySalesReturnDetailed,
                 'tally_masters':TallyMasters,
                 'tally_items':TallyItems,
+                'tally_item_mapping':TallyItemsMapping,
+                'tally_receipt_detailed':TallyReceipt,
                 }
 
 report_table_map = {
@@ -134,67 +136,33 @@ report_table_map = {
     'purchase-return': 'tally_purchase_return_detailed',
     'item':"tally_items",
     'master':"tally_masters",
+    'receipt':"tally_receipt_detailed",
 }
 
         
 
 tables = {**tally_tables}
 
-kb = {
-    "Frexotic Foods (FCY)": "FCY Frexotic",
-    "Kay Bee Exports (FCY) FROM 20-21": "FCY KBE",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": "FCY KBEIPL",
-    "Orbit Exports (FCY)": "FCY Orbit",
-    "Kay Bee Agro International Pvt Ltd (FCY)": "FCY KBAIPL",
-    "Freshnova Pvt Ltd (FCY)": "FCY Freshnova", 
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": "Thane KBEIPL",
-    "Fab Fresh Fruits": "Thane Fab Fresh",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": "Nagar KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Gujarat)": "Gujarat KBEIPL",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (CARGO)": "Cargo KBEIPL",
-    "Kay Bee Exports - Nagar Non Agri Divsion - FY 2021-22": "Nagar NA KBE",
-    "Kay Bee Exports - Agri Div. Nagar - FY2022-23 & 2023-24": "Nagar A KBE",
-    "Kay Bee Exports - Gujarat - FY2021-22": "Gujarat KBE",
-    "KAY BEE EXPORTS-MP FY 2021-22": "MP KBE",
-    "KAY BEE EXPORTS (JDS)": "JDS KBE",
-    "KAY BEE CARGO": "Cargo KBE",
-    "Orbit Exports (MH) from Apr-24": "Thane Orbit",
-    "Orbit Exports (Gujarat)": "Gujarat Orbit",    
-    "Frexotic Foods (From Apr-24)": "Thane Frexotic",
-    "Kay Bee Agro International Pvt Ltd (GJ)": "Gujarat KBAIPL",
-    "Kay Bee Agro International Pvt Ltd (MH)": "Thane KBAIPL",
-    "Kay Bee Agro International Pvt Ltd (MP)": "MP KBAIPL",
-    "Kay Bee Farm Management Services Pvt Ltd": "MP KBFMSPL",
-    "Fruit & Veg Private Limited": "MP F&VPL",
-    "KAY BEE FRESH VEG & FRUIT PVT LTD": "MP KBFV&FPL",
-    "Kay Bee Veg Pvt Ltd": "MP KBVPL",
-    "Kay Bee Agro Farms Pvt Ltd - (From 1-Apr-2016)": "Thane KBAFPL",
-    "Aamrica Fresh Private Limited": "Thane Aamrica",
-    "Freshnova Private Limited": "Thane Freshnova",
-    "Kay Bee Fresh LLP": "Thane KB Fresh",
-    "Perfect Produce Partners": "Thane Perfect Produce",
-    "Indifuit": "Thane Indifruit",
-    "KAY BEE FRUITS INC": "USA KB Fruits",
-    "Kay Bee Exports - Thane (From Apr-24)": "Thane KBE",
-    "Kay Bee Exports - Vashi FY 2022-23 & 23-24": "Vashi KBE",
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": "Vashi KBEIPL",
-    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-25)": "UK KB Veg",
-    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-20)": "UK KB Veg",
-    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)": "Phaltan KBEIPL",
-    # "Kay Bee Exports - Agri Division Phaltan 21-22": "Phaltan NA KBE",
-    # "KAY BEE EXPORTS (PHALTAN) FY21-22": "Phaltan A KBE",
-}
-
-
 
 current_date = datetime.today().date().strftime("%Y-%m-%d")
 
-demo_export = {
+kb_daily_exported_data = {
+    # --- FCY Companies (Top) ---
+
+    "Frexotic Foods (FCY)": ["FCY Frexotic", "2014-04-01", current_date],
+    "Kay Bee Exports (FCY) FROM 20-21": ["FCY KBE", '2020-04-01', current_date],
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": ["FCY KBEIPL",'2022-04-01', current_date],
+    "Orbit Exports (FCY)": ["FCY Orbit",'2014-04-01', current_date],
+    "Kay Bee Agro International Pvt Ltd (FCY)": ["FCY KBAIPL",'2019-04-01', current_date],
+    "Freshnova Pvt Ltd (FCY)": ["FCY Freshnova",'2024-04-01', current_date],
+
+    # --- Other Companies (Middle) ---
+
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": ["Vashi KBEIPL","2022-04-01", current_date],
     "Kay Bee Exports - Vashi FY 2022-23 & 23-24": ["Vashi KBE","2022-04-01", current_date],
     "Kay Bee Exports - Thane (From Apr-24)": ["Thane KBE","2024-04-01", current_date],
     "KAY BEE FRUITS INC": ["USA KB Fruits","2023-04-01", current_date],
-    "Indifuit": ["Thane Indifruit","2024-04-01", current_date],
+    "Indifruit": ["Thane Indifruit","2024-04-01", current_date],
     "Perfect Produce Partners": ["Thane Perfect Produce","2024-04-01", current_date],
     "Kay Bee Fresh LLP": ["Thane KB Fresh","2015-04-01", current_date],
     "Freshnova Private Limited": ["Thane Freshnova","2013-04-01", current_date],
@@ -205,12 +173,6 @@ demo_export = {
     "Fruit & Veg Private Limited": ["MP F&VPL","2013-04-01", current_date],
     "Kay Bee Farm Management Services Pvt Ltd": ["MP KBFMSPL","2012-04-01", current_date],
     "Kay Bee Agro International Pvt Ltd (MP)": ["MP KBAIPL","2017-04-01", current_date],
-    "Frexotic Foods (FCY)": ["FCY Frexotic", "2014-04-01", current_date],
-    "Kay Bee Exports (FCY) FROM 20-21": ["FCY KBE", '2020-04-01', current_date],
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)": ["FCY KBEIPL",'2022-04-01', current_date],
-    "Orbit Exports (FCY)": ["FCY Orbit",'2014-04-01', current_date],
-    "Kay Bee Agro International Pvt Ltd (FCY)": ["FCY KBAIPL",'2019-04-01', current_date],
-    "Freshnova Pvt Ltd (FCY)": ["FCY Freshnova",'2024-04-01', current_date], 
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Thane) - (from 2024)": ["Thane KBEIPL",'2024-04-01',current_date],
     "Fab Fresh Fruits": ["Thane Fab Fresh",'2024-04-01',current_date],
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Nagar NA) - (from 1-Apr-23)": ["Nagar KBEIPL",'2024-04-01',current_date],
@@ -229,32 +191,11 @@ demo_export = {
     "Kay Bee Agro International Pvt Ltd (MH)": ["Thane KBAIPL",'2023-04-01',current_date],
     "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-20)": ["UK KB Veg", '2020-04-01', '2025-03-31'],
     "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-25)": ["UK KB Veg", '2025-04-01', current_date],
+
+    # --- Phaltan Companies (Bottom) ---
+
+    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)": ["Phaltan KBEIPL"],
+    # "Kay Bee Exports - Agri Division Phaltan 21-22": ["Phaltan NA KBE"],
+    # "KAY BEE EXPORTS (PHALTAN) FY21-22": ["Phaltan A KBE"],
 }
 
-
-comp_details = {
-    'KAY BEE VEG 10-11':'UK1',
-    'KAY BEE VEG - (11-12)':'UK2',
-    'KAY BEE VEG - (12-13)':'UK3',
-    'KAY BEE VEG - (13-14)':'UK4',
-    'KAY BEE VEG - (15-17)':'UK5',
-    'KAY BEE VEG - (17-19)':'UK6',
-    'KAY BEE VEG - FY 2019-20':'UK7',
-    'KAY BEE VEG - FY 2020-21 - (from 1-Apr-20)':'UK8',
-    'KAY BEE VEG - FY 2020-21 - (from 1-Apr-25)':'UK9',
-}
-
-
-mc_map = {
-
-    'UK1':['UK KB Veg', '2010-04-01','2011-03-31'],
-    'UK2':['UK KB Veg', '2011-04-01','2012-03-31'],
-    'UK2':['UK KB Veg', '2011-04-01','2012-03-31'],
-    'UK3':['UK KB Veg', '2012-04-01','2013-03-31'],
-    'UK4':['UK KB Veg', '2014-04-01','2015-03-31'],
-    'UK5':['UK KB Veg', '2015-04-01','2017-03-31'],
-    'UK6':['UK KB Veg', '2017-04-01','2019-03-31'],
-    'UK7':['UK KB Veg', '2019-04-01','2020-03-31'],
-    'UK8':['UK KB Veg', '2020-04-01','2025-03-31'],
-    'UK9':['UK KB Veg', '2025-04-01','2026-03-31'],
-}

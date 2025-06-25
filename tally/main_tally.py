@@ -2,19 +2,17 @@ import pyautogui as pg
 import os
 import time
 from tally import tally_utils
-from utils.common_utils import kb, demo_export
-from datetime import datetime, timedelta
+from utils.common_utils import kb_daily_exported_data
+from datetime import datetime
 from logging_config import logger
 
 
 def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
     valid_companies = []
     for check_company in company:
-        c = company_validation(check_company, fromdate, todate)
-        print(c)
-        if c is not None:
-            valid_companies.append(c)
-
+        comp_valid = company_validation(check_company, fromdate, todate)
+        if comp_valid is not None:
+            valid_companies.append(comp_valid)
     from_date_str = datetime.strptime(fromdate, '%Y-%m-%d').strftime('%d-%m-%Y')
     to_date_str = datetime.strptime(todate, '%Y-%m-%d').strftime('%d-%m-%Y')
 
@@ -24,7 +22,6 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
     start_date = datetime.strptime(fromdate, '%Y-%m-%d').date()
     start_year = start_date.year
     start_month = start_date.month
-
 
     logger.info(f"Starting Tally Prime API export from {from_date_str} to {to_date_str} for companies: {valid_companies}")
 
@@ -40,17 +37,18 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
 
         time.sleep(1)
         tally_utils.select_company(company_code=comp)
-        mc = kb.get(comp)
+        mc = kb_daily_exported_data.get(comp)[0]
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return', 'purchase', 'purchase-return']
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt']
+
         if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
             for r in ['item', 'master']:
                 if r not in reports:
                     reports.append(r)
 
-        # reports = ['receipt','payments','journal']
+        # reports = ['payments','journal']
         logger.info(f"Starting report export for: {reports}")
 
         for report in reports:
@@ -87,7 +85,7 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
 
 
 def company_validation(company:str, comp_fromdate: str, comp_todate: str):
-    comp = demo_export.get(company)
+    comp = kb_daily_exported_data.get(company)
     comp_start_date, comp_end_date = comp[1:3]
     from_dt = datetime.strptime(comp_fromdate, "%Y-%m-%d").date()
     to_dt = datetime.strptime(comp_todate, "%Y-%m-%d").date()

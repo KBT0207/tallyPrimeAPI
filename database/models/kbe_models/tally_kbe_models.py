@@ -193,3 +193,39 @@ class TallyItems(KBEBase):
     material_centre = Column(String(255), nullable=False)
     fcy = Column(String(10), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+
+
+
+class TallyItemsMapping(KBEBase):
+    __tablename__ = 'tally_item_mapping'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    item_name = Column(String(255), nullable=False)
+    item_alias = Column(String(255), nullable=True)
+    parent = Column(String(255), nullable=True)
+    unit = Column(String(50), nullable=False)
+    material_centre = Column(String(255), nullable=False)
+    fcy = Column(String(10), nullable=False)
+    mapping = Column(String(255), nullable=True)
+    conversion = Column(Float, nullable=True)
+    alt_unit = Column(String(50), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class TallyReceipt(KBEBase):
+    __tablename__ = 'tally_receipt_detailed'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    date = Column(Date,nullable=False)
+    voucher_no = Column(Integer, nullable=False)
+    party_name = Column(String(100),nullable=False)
+    inr_amount = Column(Float,nullable=False)
+    forex_amount = Column(Float,nullable=False)
+    rate_of_exchange = Column(Float,nullable=False)
+    amount_type = Column(String(10), nullable=False)
+    currency = Column(String(10), nullable=True)
+    fcy = Column(String(10), nullable=False)
+    material_centre = Column(String(100), nullable=False)
+    narration = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+

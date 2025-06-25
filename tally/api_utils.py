@@ -8,6 +8,10 @@ from datetime import date, time as dt_time  # rename to avoid conflict
 from typing import Tuple
 import pandas as pd
 import re
+import pyautogui as pg
+import subprocess
+
+
 
 def get_api_date_and_time(file: str) -> Tuple[date, dt_time]:
     try:
@@ -82,6 +86,9 @@ def json_data_convert_amount_in_string(file):
 
         content = content.replace('\\u0004', '')
         content = re.sub(r'("Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+        content = re.sub(r'("BIll Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+        content = re.sub(r'("Rate Of Exchange":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+        content = re.sub(r'("Rate of Exchange":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
         content = re.sub(r',\s*"Item Group":\s*"Not Applicable"', '', content)
 
         with open(file, 'w', encoding='utf-8') as f:
@@ -167,12 +174,22 @@ def extract_all_postal_codes(text):
     combined = '|'.join(patterns)
     return [match.strip() for match in re.findall(combined, text) if match.strip()]
 
+
+
+
 def clean_string(value):
     if pd.isna(value):
         return None
     if isinstance(value, str):
-        return value.replace("'", "''").strip()
+        value = value.replace("_x000D_", "")
+        value = re.sub(r'[\t\r\n]', ' ', value)
+        value = value.replace("'", "''")
+        value = value.encode('ascii', errors='ignore').decode()
+        value = re.sub(r'\s+', ' ', value)
+        value = value.lstrip("-/=%@#^&*()!@#$%^&*()_+-=[]{}|\\;:'\",.<>/?`~")
+        value = value.strip()
     return value
+
 
 
 def move_all_items(source, destination):
@@ -188,3 +205,22 @@ def move_all_items(source, destination):
             print(f"Moved: {src_path} → {dst_path}")
         except Exception as e:
             print(f"Failed to move {src_path}: {e}")
+
+
+def select_all_data():
+    pg.hotkey('ctrl', 'home')
+    time.sleep(1)
+    vbs_script = (
+        'Set WshShell = WScript.CreateObject("WScript.Shell")\n'
+        'WScript.Sleep 3000\n'
+        'WshShell.SendKeys "^+{END}"\n'
+    )
+
+    vbs_path = os.path.join(os.getcwd(), "send_ctrl_shift_end.vbs")
+
+    with open(vbs_path, "w", encoding="utf-8") as f:
+        f.write(vbs_script)
+
+    subprocess.run(["wscript", vbs_path], check=True)
+
+

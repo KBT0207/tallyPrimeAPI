@@ -5,7 +5,7 @@ import time
 # from busy.busy_utils import start_rdc
 from logging_config import logger
 from utils import common_utils
-from tally.api_utils import rename_latest_file
+from tally.api_utils import rename_latest_file,select_all_data
 from datetime import datetime
 
 from typing import Union
@@ -377,8 +377,7 @@ def api_helper_master(fromdate, to_date):
 
 def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
     fcy_list = ["FCY Freshnova", "FCY Frexotic", "FCY KBE", "FCY KBEIPL", "FCY Orbit", "FCY KBAIPL"]
-    print(material_centre)
-    # Check for FCY companies properly
+
     invalid_report_types = {"item", "master"}
 
     if any(fcy in material_centre for fcy in fcy_list) and reports_type not in invalid_report_types:
@@ -424,7 +423,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
         if target_img:
             pg.moveTo(target_img, duration=0.2)
             time.sleep(1)
-            pg.hotkey('ctrl', 'space')
+            select_all_data()
             time.sleep(1)
             pg.hotkey(*hotkey)
             time.sleep(2)

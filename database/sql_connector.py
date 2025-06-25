@@ -73,6 +73,9 @@ KBBIO_DATABASE = os.getenv('KBBIO_DATABASE')
 
 KBE_DATABASE = os.getenv('KBE_DATABASE')
 
+KBExports_DATABASE = os.getenv('KBExports_DATABASE')
+
+
 
 kbbio_connector = DatabaseConnector(USERNAME, PASSWORD, HOST, PORT, KBBIO_DATABASE)
 kbbio_engine = kbbio_connector.engine
@@ -83,5 +86,12 @@ kbbio_connection = kbbio_engine.connect()
 kbe_connector = DatabaseConnector(USERNAME, PASSWORD, HOST, PORT, KBE_DATABASE)
 kbe_engine = kbe_connector.engine
 kbe_connection = kbe_engine.connect()
+
+
+kbexports_connector = DatabaseConnector(USERNAME, PASSWORD, HOST, PORT, KBExports_DATABASE)
+kbexports_engine = kbexports_connector.engine
+kbexports_connection = kbexports_engine.connect()
+
+
 
 
