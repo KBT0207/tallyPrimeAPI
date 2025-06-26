@@ -101,7 +101,8 @@ def start_tally() -> None:
     pg.hotkey('win', 'r')
     time.sleep(1)
     pg.typewrite(r"C:\Program Files\TallyPrime\tally.exe", interval=0.1)
-    pg.press('enter')    
+    pg.press('enter') 
+     
     
 def tally_data_server():
     location = None
@@ -177,6 +178,7 @@ def select_company(company_code):
     pg.press('enter')
     pg.typewrite(os.getenv('TALLY_PASSWORD'), interval=0.1)
     pg.press('enter')
+    find_img('tally/images/tally_gateway.png')  
 
 def APIchange_period(from_date, to_date):
     find_img('tally/images/apiChangeDate.png')
@@ -193,7 +195,7 @@ def APIchange_period(from_date, to_date):
 
 def tally_api_select_report(report_type, from_date, to_date):
     find_img('tally/images/tally_gateway.png')
-    time.sleep(1)
+    time.sleep(2)
     pg.press("t")
     find_img('tally/images/tallyPrimeAPI.png')
     pg.press('g')
@@ -423,7 +425,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
         if target_img:
             pg.moveTo(target_img, duration=0.2)
             time.sleep(1)
-            select_all_data()
+            pg.hotkey('ctrl', 'space')
             time.sleep(1)
             pg.hotkey(*hotkey)
             time.sleep(2)

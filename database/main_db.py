@@ -48,6 +48,10 @@ def import_tally_data(date):
             if get_filename_tally(file) == 'receipt':
                 importer.import_data("tally_receipt_detailed",json_data.clean_and_transform(),commit=True)
 
+            if get_filename_tally(file) == 'payments':
+                importer.import_data("tally_payments_detailed",json_data.clean_and_transform(),commit=True)
+    
+
         
 
                 logger.info(f"{get_filename_tally(file)} and {get_compname(file)} imported into database.. ")

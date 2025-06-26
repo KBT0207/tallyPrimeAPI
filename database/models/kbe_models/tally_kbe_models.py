@@ -229,3 +229,21 @@ class TallyReceipt(KBEBase):
     narration = Column(String(1000), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
+
+class TallyPayments(KBEBase):
+    __tablename__ = 'tally_payments_detailed'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    date = Column(Date,nullable=False)
+    voucher_no = Column(String(255), nullable=False)
+    party_name = Column(String(100),nullable=False)
+    inr_amount = Column(Float,nullable=False)
+    forex_amount = Column(Float,nullable=False)
+    rate_of_exchange = Column(Float,nullable=False)
+    amount_type = Column(String(10), nullable=False)
+    currency = Column(String(10), nullable=True)
+    fcy = Column(String(10), nullable=False)
+    material_centre = Column(String(100), nullable=False)
+    narration = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+

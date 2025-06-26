@@ -13,9 +13,9 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
         comp_valid = company_validation(check_company, fromdate, todate)
         if comp_valid is not None:
             valid_companies.append(comp_valid)
+
     from_date_str = datetime.strptime(fromdate, '%Y-%m-%d').strftime('%d-%m-%Y')
     to_date_str = datetime.strptime(todate, '%Y-%m-%d').strftime('%d-%m-%Y')
-
     current_date = datetime.today().date()
     current_year = current_date.year
     current_month = current_date.month
@@ -41,47 +41,61 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt']
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments']
 
         if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
             for r in ['item', 'master']:
                 if r not in reports:
                     reports.append(r)
 
-        # reports = ['payments','journal']
         logger.info(f"Starting report export for: {reports}")
 
-        for report in reports:
-            logger.info(f"Generating report: {report}")
-            func_reports = tally_utils.tally_api_select_report(
-                report_type=report,
-                from_date=from_date_str,
-                to_date=to_date_str
-            )
-            logger.debug(f"Report result for {report}: {func_reports}")
-
-            if func_reports != 'No Reports':
-                logger.info(f"Exporting data for report: {report}")
-                tally_utils.api_exports_data(
-                    reports_type=report,
-                    esc=4,
-                    material_centre=mc,
-                    todate=to_date_str
+        try:
+            no_vch_entered_in_tally = 'tally/images/no_voucher_enterd_in_comp.png'
+            no_vch = pg.locateOnScreen(no_vch_entered_in_tally, confidence=0.9)
+            pg.moveTo(no_vch)
+            if no_vch:
+                print("image found")
+                logger.warning(f"No vouchers entered for {comp}. Closing Tally and moving to the next company.")
+                pg.hotkey('alt', 'f4')
+                time.sleep(2)
+                pg.press("y")
+                time.sleep(1)
+                continue
+        except:       
+            for report in reports:
+                logger.info(f"Generating report: {report}")
+                func_reports = tally_utils.tally_api_select_report(
+                    report_type=report,
+                    from_date=from_date_str,
+                    to_date=to_date_str
                 )
-            else:
-                logger.warning(f"No reports found for {report}, skipping...")
+                logger.debug(f"Report result for {report}: {func_reports}")
 
-        pg.press('esc')
-        time.sleep(3)
-        pg.press('y')
-        logger.debug("Exited current screen in Tally.")
+                if func_reports != 'No Reports':
+                    logger.info(f"Exporting data for report: {report}")
+                    tally_utils.api_exports_data(
+                        reports_type=report,
+                        esc=4,
+                        material_centre=mc,
+                        todate=to_date_str
+                    )
+                else:
+                    logger.warning(f"No reports found for {report}, skipping...")
 
-        pg.press('esc')
-        time.sleep(3)
-        pg.press('y')
-        logger.debug("Exited company in Tally.")
+            pg.press('esc')
+            time.sleep(3)
+            pg.press('y')
+            logger.debug("Exited current screen in Tally.")
 
-    logger.info("All companies processed successfully.")
+            pg.press('esc')
+            time.sleep(3)
+            pg.press('y')
+            logger.debug("Exited company in Tally.")
+
+        logger.info("All companies processed successfully.")
+
+
 
 
 def company_validation(company:str, comp_fromdate: str, comp_todate: str):
