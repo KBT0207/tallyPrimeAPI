@@ -51,8 +51,10 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
         logger.info(f"Starting report export for: {reports}")
 
         try:
+            time.sleep(1)
             no_vch_entered_in_tally = 'tally/images/no_voucher_enterd_in_comp.png'
             no_vch = pg.locateOnScreen(no_vch_entered_in_tally, confidence=0.9)
+            time.sleep(1)
             pg.moveTo(no_vch)
             if no_vch:
                 print("image found")

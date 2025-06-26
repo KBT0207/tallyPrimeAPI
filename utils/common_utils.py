@@ -161,7 +161,7 @@ kb_daily_exported_data = {
     "Freshnova Pvt Ltd (FCY)": ["FCY Freshnova",'2024-04-01', current_date],
 
     # --- Other Companies (Middle) ---
-
+    "Orbit Exports (Gujarat)": ["Gujarat Orbit",'2024-04-01',current_date], 
     "KAY BEE EXPORTS INTERNATIONAL PVT LTD -Vashi": ["Vashi KBEIPL","2022-04-01", current_date],
     "Kay Bee Exports - Vashi FY 2022-23 & 23-24": ["Vashi KBE","2022-04-01", current_date],
     "Kay Bee Exports - Thane (From Apr-24)": ["Thane KBE","2024-04-01", current_date],
@@ -189,7 +189,6 @@ kb_daily_exported_data = {
     "KAY BEE EXPORTS (JDS)": ["JDS KBE",'2021-04-01', current_date],
     "KAY BEE CARGO": ["Cargo KBE",'2021-04-01', current_date],
     "Orbit Exports (MH) from Apr-24": ["Thane Orbit",'2024-04-01',current_date],
-    "Orbit Exports (Gujarat)": ["Gujarat Orbit",'2024-04-01',current_date], 
     "Frexotic Foods (From Apr-24)": ["Thane Frexotic",'2024-04-01',current_date],  
     "Kay Bee Agro International Pvt Ltd (GJ)": ["Gujarat KBAIPL",'2013-04-01',current_date],
     "Kay Bee Agro International Pvt Ltd (MH)": ["Thane KBAIPL",'2023-04-01',current_date],

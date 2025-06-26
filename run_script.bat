@@ -2,7 +2,7 @@
 
 :: Define log file location
 set LOG_DIR=E:\logs
-set LOG_FILE=%LOG_DIR%\task_log.txt
+set LOG_FILE=%LOG_DIR%\task_log.log
 
 :: Check if the logs directory exists, if not, create it
 if not exist "%LOG_DIR%" (
@@ -14,11 +14,11 @@ if not exist "%LOG_DIR%" (
 echo Task started at: %date% %time% >> %LOG_FILE%
 
 :: Change to the project directory
-cd /d E:\Automation\busy_tally_data_pipeline
+cd /d E:\Automation\tallyPrimeAPI
 
 :: Check if the directory change was successful
 if errorlevel 1 (
-    echo Failed to change directory to E:\Automation\busy_tally_data_pipeline at %date% %time% >> %LOG_FILE%
+    echo Failed to change directory to E:\Automation\tallyPrimeAPI at %date% %time% >> %LOG_FILE%
     exit /b 1
 )
 
