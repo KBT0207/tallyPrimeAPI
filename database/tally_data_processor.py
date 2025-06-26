@@ -14,7 +14,9 @@ from tally.api_utils  import fcy_comp, symbol_to_currency, json_data_convert_amo
 import warnings
 import re
 
-
+pd.set_option('future.no_silent_downcasting', True)
+today = datetime.today().strftime('%d-%m-%Y')
+warnings.filterwarnings('ignore')
 
 
 def get_filename_tally(path:str):
@@ -23,18 +25,8 @@ def get_filename_tally(path:str):
 def get_compname_tally(path:str):
     return path.split("\\")[-1].rsplit("_", 2)[0]
 
-
 def get_date_tally(path:str):
     return path.split("\\")[-1].split("_")[-1].removesuffix(".xlsx")
-
-
-
-pd.set_option('future.no_silent_downcasting', True)
-
-
-
-today = datetime.today().strftime('%d-%m-%Y')
-warnings.filterwarnings('ignore')
 
 def APISalesVoucher(file_path: str, material_centre_name: str):
     try:
@@ -1382,8 +1374,8 @@ class TallyDataProcessor:
 
         if report_type in ['payments']:
              df = APIPaymentVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
-        # if report_type in ['journal']:
-        #      df = (file_path=self.excel_file_path, material_centre_name=company_code)
+        if report_type in ['journal']:
+             df = APIJournalVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
         
         
         

@@ -41,7 +41,7 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments']
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
 
         if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
             for r in ['item', 'master']:
@@ -94,9 +94,6 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
             logger.debug("Exited company in Tally.")
 
         logger.info("All companies processed successfully.")
-
-
-
 
 def company_validation(company:str, comp_fromdate: str, comp_todate: str):
     comp = kb_daily_exported_data.get(company)

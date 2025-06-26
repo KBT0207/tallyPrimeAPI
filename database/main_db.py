@@ -19,46 +19,26 @@ import os, glob
 
 def import_tally_data(date):
     KBEBase.metadata.create_all(kbe_engine)
-    
     tally_files = glob.glob(f"E:\\api_download\\**\\*{date}*.json", recursive=True)
 
-    if len(tally_files) != 0:
+    if tally_files:
         for file in tally_files:
-            json_data = TallyDataProcessor(file)
-            importer = DatabaseCrud(kbe_connector)
-                
-            if get_filename_tally(file) == 'sales':
-                importer.import_data("tally_sales_detailed",json_data.clean_and_transform(),commit=True)
+            try:
+                json_data = TallyDataProcessor(file)
+                importer = DatabaseCrud(kbe_connector)
+                file_type = get_filename_tally(file)
+                if file_type in report_table_map:
+                    table_name = report_table_map[file_type]
+                    importer.import_data(table_name, json_data.clean_and_transform(), commit=True)
+                    logger.info(f"Successfully imported {file} into {table_name}")
+                else:
+                    logger.warning(f"Unrecognized file type {file_type} in {file}")
 
-            if get_filename_tally(file) == 'sales-return':
-                importer.import_data("tally_sales_return_detailed",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'purchase':
-                importer.import_data("tally_purchase_detailed",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'purchase-return':
-                importer.import_data("tally_purchase_return_detailed",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'item':
-                importer.import_data("tally_items",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'master':
-                importer.import_data("tally_masters",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'receipt':
-                importer.import_data("tally_receipt_detailed",json_data.clean_and_transform(),commit=True)
-
-            if get_filename_tally(file) == 'payments':
-                importer.import_data("tally_payments_detailed",json_data.clean_and_transform(),commit=True)
-    
-
-        
-
-                logger.info(f"{get_filename_tally(file)} and {get_compname(file)} imported into database.. ")
+            except Exception as e:
+                logger.error(f"Error processing file {file}: {e}")
 
     else:
-        logger.critical("No File for today's date found to import in database")
-
+        logger.critical("No files for today's date found to import into the database.")
 
 def delete_tally_data_file_wise(start_date: str, end_date: str, file_date: str, commit: bool):
 
