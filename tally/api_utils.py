@@ -179,7 +179,7 @@ def extract_all_postal_codes(text):
 
 def clean_string(value):
     if pd.isna(value):
-        return None
+        return value
     if isinstance(value, str):
         value = value.replace("_x000D_", "")
         value = re.sub(r'[\t\r\n]', ' ', value)

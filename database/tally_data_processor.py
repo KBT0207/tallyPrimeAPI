@@ -268,9 +268,11 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
 
     for col in final_columns:
         if col not in df_final.columns:
-            df_final[col] = None
+            df_final[col] = ''
     df_final = df_final[final_columns]
     df_final = df_final.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df_final = df_final.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
     
     df_final.replace([float('inf'), float('-inf')], np.nan, inplace=True)
     return df_final
@@ -485,11 +487,13 @@ def APIPurchaseVoucher(file_path: str, material_centre_name: str):
 
     for col in final_col:
         if col not in df.columns:
-            df[col] = None
+            df[col] = ''
 
     df['narration'] = df['narration'].str[:500]
     df = df[final_col]
     df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
     return df
 
 def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
@@ -737,9 +741,11 @@ def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
 
     for col in final_col:
         if col not in df.columns:
-            df[col] = None
+            df[col] = ''
     df = df[final_col]
     df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
 
     return df
 
@@ -970,11 +976,13 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
 
     for col in final_columns:
         if col not in df_final.columns:
-            df_final[col] = None
+            df_final[col] = ''
 
     df_final['narration'] = df_final['narration'].str[:500]
     df_final = df_final[final_columns]
     df_final = df_final.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df_final = df_final.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
     return df_final
 
 def APIMaster(file_path: str, material_centre_name: str):
@@ -1011,6 +1019,8 @@ def APIMaster(file_path: str, material_centre_name: str):
         df[col] = df[col].apply(clean_string)
 
     df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
 
 
     df = df.where(pd.notnull(df), None)
@@ -1054,6 +1064,8 @@ def APIItems(file_path: str, material_centre_name: str):
         
         df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
         df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+        df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
         cols = ['item_name', 'item_alias', 'parent', 'unit']
         for col in cols:
             if col in df.columns:
@@ -1134,14 +1146,17 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
         'forex_amount', 'rate_of_exchange', 'amount_type',
         'currency', 'fcy', 'material_centre','narration'
     ]
+    
+
 
     for col in final_cols:
         if col not in df.columns:
-            df[col] = None
+            df[col] = ''
 
     df['narration'] = df['narration'].str[:500]
 
     df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+    df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
 
     df = df[final_cols]
 

@@ -76,6 +76,8 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
 
         # Remove special line breaks
         df = df.applymap(lambda x: x.replace("_x000D_", "") if isinstance(x, str) else x)
+        df = df.applymap(lambda x: x.strip("\r\n") if isinstance(x, str) else x)
+
 
         # Ensure 'conversion' is numeric
         if 'conversion' in df.columns:
@@ -106,8 +108,10 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
 
 if __name__ == "__main__": 
     quartlyExport(1,1)
-    # logger.info("Completed Current Q1")
-    # quartlyExport(45,50)
+
+
+
+
 
 
 
