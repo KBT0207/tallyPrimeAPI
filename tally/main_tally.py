@@ -5,9 +5,10 @@ from tally import tally_utils
 from utils.common_utils import kb_daily_exported_data
 from datetime import datetime
 from logging_config import logger
+from typing import Optional
 
 
-def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
+def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra_reports:Optional[bool] = True):
     valid_companies = []
     for check_company in company:
         comp_valid = company_validation(check_company, fromdate, todate)
@@ -42,11 +43,11 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str):
         logger.info(f"Selected company: {comp}")
     
         reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
-
-        if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
-            for r in ['item', 'master']:
-                if r not in reports:
-                    reports.append(r)
+        if extra_reports == True:
+            if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
+                for r in ['item', 'master']:
+                    if r not in reports:
+                        reports.append(r)
 
         logger.info(f"Starting report export for: {reports}")
 
