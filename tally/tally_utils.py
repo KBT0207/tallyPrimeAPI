@@ -212,12 +212,33 @@ def tally_api_select_report(report_type, from_date, to_date):
         'journal': api_helper_journal,
         'item': api_helper_item,
         'master': api_helper_master,
+        'outstanding': api_helper_outstanding,
     }
     helper_function = report_functions.get(report_type)
     if helper_function:
         return helper_function(from_date, to_date)
     else:
         raise ValueError(f"Invalid report_type: {report_type}")
+    
+def api_helper_outstanding(fromdate, to_date):
+    pg.press('e')
+    time.sleep(1)
+    find_img('tally/images/getAPIDataTypeReport.png')
+    time.sleep(1)
+    try:
+        time.sleep(1)
+        pg.locateOnScreen("tally/images/disable_outstanding.png")
+        time.sleep(1)
+        pg.press("esc",presses=3,interval=2)
+        return 'No Reports'
+    except:
+        pg.press('p')
+        time.sleep(1)
+        find_img('tally/images/getAPIDataTypeReport.png')
+        time.sleep(1)
+        pg.press('p')
+        APIchange_period(from_date=fromdate, to_date=to_date)
+        return None
 
 def api_helper_sales(fromdate, to_date):
     pg.press('down')
@@ -291,7 +312,7 @@ def api_helper_purchase_return(fromdate, to_date):
         return None
 
 def api_helper_receipt(fromdate, to_date):
-    pg.press('B')
+    pg.press('b')
     time.sleep(1)
     find_img('tally/images/getAPIBanking.png')
     time.sleep(2)
@@ -303,7 +324,7 @@ def api_helper_receipt(fromdate, to_date):
         return 'No Reports'
 
     except:
-        pg.press('U')
+        pg.press('u')
         time.sleep(1)
         APIchange_period(from_date=fromdate, to_date=to_date)
         return None
@@ -316,12 +337,11 @@ def api_helper_payments(fromdate, to_date):
     try:
         time.sleep(1)
         pg.locateOnScreen("tally/images/disable_payment.png")
-        print("DISABLED IMAGES")
         time.sleep(1)
         pg.press("esc", presses=3, interval=2)
         return 'No Reports'
     except:
-        pg.press('l')
+        pg.press('p')
         time.sleep(1)
         APIchange_period(from_date=fromdate, to_date=to_date)
         return None
@@ -406,6 +426,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
         'purchase-return': ('alt', 'l'),
         'item': ('alt', 'v'),
         'master': ('alt', 'j'),
+        'outstanding': ('alt', 'h'),
     }
 
     hotkey = hotkeys.get(reports_type)

@@ -1199,6 +1199,11 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
     else:
         df['Payment Number'] = 'Blank'
 
+    if 'Payment Date' in df.columns:
+        df['Payment Date'] = pd.to_datetime(df['Payment Date'], errors='coerce')
+    else:
+        df['Payment Date'] = pd.NaT
+
     if 'Rate Of Exchange' in df.columns:
         df['Rate Of Exchange'] = df['Rate Of Exchange'].fillna('')
     else:
@@ -1374,6 +1379,7 @@ class TallyDataProcessor:
 
         if report_type in ['payments']:
              df = APIPaymentVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
+
         if report_type in ['journal']:
              df = APIJournalVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
         
