@@ -1261,7 +1261,7 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
 
 def APIJournalVoucher(file_path: str, material_centre_name: str):
     try:
-        data = json_data_convert_amount_in_string(file_path,current_file_in_save=True)
+        data = json_data_convert_amount_in_string(file_path)
         raw_data = data['ENVELOPE']['Body']
     except Exception as e:
         print(f'Error loading data: {e}')
