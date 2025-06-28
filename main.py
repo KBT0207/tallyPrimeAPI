@@ -23,7 +23,7 @@ from typing import Optional
 def quartlyExport(start_q, end_q):
     for i in range(start_q, end_q+1):
         fromdate1, today1 = get_specific_fiscal_quarter_date(i)
-        main_tally.tally_prime_api_export_data(company=list(kb_daily_exported_data.keys()),fromdate=fromdate1, todate=today1,extra_reports=True)
+        main_tally.tally_prime_api_export_data(company=list(kb_daily_exported_data.keys()),fromdate=fromdate1, todate=today1,extra_reports=False)
         main_db.delete_tally_data_file_wise(start_date=fromdate1,end_date=today1, file_date=today1, commit=True)
         main_db.import_tally_data(date=today1)
         logger.info(f"Completed This Quarter from {fromdate1} and to date is {today1}")
