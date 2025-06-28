@@ -107,7 +107,11 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
 
 
 if __name__ == "__main__": 
-    quartlyExport(1,2)
+    # quartlyExport(1,2)
+    path = r"E:\GitHub\tallyPrimeAPI\data\FCY Freshnova_sales-return_2025-06-28.json"
+    df = tally_data_processor.APISalesReturnVoucher(path, material_centre_name='FCY Freshnova')
+    view(df)
+
     
 
 
