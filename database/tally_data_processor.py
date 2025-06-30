@@ -815,9 +815,25 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
         if 'Amount' not in df_ledger.columns:
             df_ledger['Amount'] = "0"
 
+        if 'Rate of Exchange' not in df_ledger.columns:
+            df_ledger["Rate of Exchange"] = '0'
+        else:
+            df_ledger['Rate of Exchange'] = df_ledger['Rate of Exchange'].astype(str).str.replace(r'₹', '', regex=True)
+
+        # Step 2: Extract currency from 'Amount'
         df_ledger['currency'] = df_ledger['Amount'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
         df_ledger['currency'] = df_ledger['currency'].map(symbol_to_currency)
         df_ledger['currency'] = df_ledger['currency'].fillna("Unknown")
+
+        # Step 3: Re-check unknowns, use 'Rate of Exchange' as fallback source
+        unknown_mask = df_ledger['currency'] == 'Unknown'
+
+        if unknown_mask.any():
+            fallback_currency = df_ledger.loc[unknown_mask, 'Rate of Exchange'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
+            fallback_currency = fallback_currency[0].map(symbol_to_currency)
+            df_ledger.loc[unknown_mask, 'currency'] = fallback_currency.fillna("Unknown")
+
+
         df_ledger['Amount'] = df_ledger['Amount'].str.replace(r'[^\d.\-]', '', regex=True)
         df_ledger['Amount'] = pd.to_numeric(df_ledger['Amount'], errors='coerce').fillna(0).round(2)
 
@@ -978,6 +994,7 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
 
+
     return df_final
 
 def APIMaster(file_path: str, material_centre_name: str):
@@ -1015,7 +1032,6 @@ def APIMaster(file_path: str, material_centre_name: str):
     df = df.applymap(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
-
 
     return df
 
