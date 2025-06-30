@@ -239,7 +239,7 @@ class TallyPayments(KBEBase):
     party_name = Column(String(100),nullable=False)
     inr_amount = Column(Float,nullable=False)
     forex_amount = Column(Float,nullable=False)
-    rate_of_exchange = Column(Float,nullable=False)
+    rate_of_exchange = Column(Float,nullable=True)
     amount_type = Column(String(10), nullable=False)
     currency = Column(String(10), nullable=True)
     fcy = Column(String(10), nullable=False)
