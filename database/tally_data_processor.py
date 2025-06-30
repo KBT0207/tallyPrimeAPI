@@ -1161,7 +1161,7 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
 
     return df
 
-def APIPaymentVoucher(file_path: str, material_centre_name: str):
+def APIPaymentVoucher(file_path: str, material_centre_name: str):y
     try:
         logger.info(f"Started processing file: {file_path}")
         data = json_data_convert_amount_in_string(file_path)
@@ -1260,6 +1260,15 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
 
     df['narration'] = df['narration'].astype(str).str[:500]
     df = df[final_cols]
+    # Step 1: Clean the 'rate_of_exchange' column
+    df['rate_of_exchange'] = pd.to_numeric(df['rate_of_exchange'], errors='coerce')  # Convert invalid strings to NaN
+
+    # Step 2: Replace INR rates with 1
+    df.loc[df['currency'].str.upper() == 'INR', 'rate_of_exchange'] = 1
+
+    # Step 3: Fill remaining NaNs with 0 (non-INR missing rates)
+    df['rate_of_exchange'] = df['rate_of_exchange'].fillna(0)
+
 
     logger.info("Successfully processed the payment voucher data.")
     return df
