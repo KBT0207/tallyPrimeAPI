@@ -114,6 +114,15 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         df_ledger['Amount'] = df_ledger['Amount'].str.replace(r'[^\d.\-]', '', regex=True)
         df_ledger['Amount'] = pd.to_numeric(df_ledger['Amount'], errors='coerce').fillna(0).round(2)
 
+        if 'currency' in df_ledger.columns and 'Forex Amount' in df_ledger.columns:
+            unknown_mask = (df_ledger['currency'] == 'Unknown') & df_ledger['Forex Amount'].notna()
+
+            if unknown_mask.any():
+                extracted_symbols = df_ledger.loc[unknown_mask, 'Forex Amount'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')[0]
+                mapped_currencies = extracted_symbols.map(symbol_to_currency)
+                df_ledger.loc[unknown_mask, 'currency'] = mapped_currencies.fillna(df_ledger.loc[unknown_mask, 'currency'])
+
+
         df_ledger['helper1'] = (
             df_ledger['Voucher Date'].astype(str) + 
             df_ledger['Voucher Number'].astype(str) + 
@@ -125,9 +134,29 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         if not df_item.empty:
             df_ledger = df_ledger.loc[~df_ledger['helper1'].isin(ledger_filterd['helper1'])]
             df_ledger = df_ledger.loc[~df_ledger['helper1'].isin(df_helper['helper1'])]
+
+        if 'Forex Amount' in df_ledger.columns:
+            df_ledger['Effective Amount'] = np.where(
+                df_ledger['Forex Amount'].notna(),
+                df_ledger['Forex Amount'],
+                df_ledger['Amount']
+            )
+        else:
+            df_ledger['Effective Amount'] = df_ledger['Amount']
+
+        df_ledger['Effective Amount'] = (
+            df_ledger['Effective Amount']
+            .astype(str)
+            .str.replace(r'[^\d.\-]', '', regex=True)
+        )
+
+        df_ledger['Effective Amount'] = pd.to_numeric(
+            df_ledger['Effective Amount'], errors='coerce'
+        ).fillna(0).round(2)
+
              
         pivot_df = df_ledger.pivot_table(
-            values='Amount',
+            values='Effective Amount',
             index=['VOUCHERKEY', 'Voucher Date', 'Voucher Number', 'Voucher Type', 'Party Name','currency'],
             columns='LedgerName',
             aggfunc='sum',
@@ -833,6 +862,15 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
             fallback_currency = fallback_currency[0].map(symbol_to_currency)
             df_ledger.loc[unknown_mask, 'currency'] = fallback_currency.fillna("Unknown")
 
+    
+        if 'currency' in df_ledger.columns and 'Forex Amount' in df_ledger.columns:
+            unknown_mask = (df_ledger['currency'] == 'Unknown') & df_ledger['Forex Amount'].notna()
+
+            if unknown_mask.any():
+                extracted_symbols = df_ledger.loc[unknown_mask, 'Forex Amount'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')[0]
+                mapped_currencies = extracted_symbols.map(symbol_to_currency)
+                df_ledger.loc[unknown_mask, 'currency'] = mapped_currencies.fillna(df_ledger.loc[unknown_mask, 'currency'])
+
 
         df_ledger['Amount'] = df_ledger['Amount'].str.replace(r'[^\d.\-]', '', regex=True)
         df_ledger['Amount'] = pd.to_numeric(df_ledger['Amount'], errors='coerce').fillna(0).round(2)
@@ -850,8 +888,28 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
             df_ledger = df_ledger.loc[~df_ledger['helper1'].isin(ledger_filterd['helper1'])]
             df_ledger = df_ledger.loc[~df_ledger['helper1'].isin(df_helper['helper1'])]
 
+
+        if 'Forex Amount' in df_ledger.columns:
+            df_ledger['Effective Amount'] = np.where(
+                df_ledger['Forex Amount'].notna(),
+                df_ledger['Forex Amount'],
+                df_ledger['Amount']
+            )
+        else:
+            df_ledger['Effective Amount'] = df_ledger['Amount']
+
+        df_ledger['Effective Amount'] = (
+            df_ledger['Effective Amount']
+            .astype(str)
+            .str.replace(r'[^\d.\-]', '', regex=True)
+        )
+
+        df_ledger['Effective Amount'] = pd.to_numeric(
+            df_ledger['Effective Amount'], errors='coerce'
+        ).fillna(0).round(2)
+
         pivot_df = df_ledger.pivot_table(
-            values='Amount',
+            values='Effective Amount',
             index=['VOUCHERKEY', 'Voucher Date', 'Voucher Number', 'Voucher Type', 'Party Name','currency'],
             columns='LedgerName',
             aggfunc='sum',
@@ -1081,6 +1139,7 @@ def APIItems(file_path: str, material_centre_name: str):
                 df[col] = df[col].apply(clean_string)
             else:
                 print(f"Column '{col}' not found")
+                
     
 
         return df
@@ -1175,6 +1234,7 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
         )
 
     df = df[final_cols]
+    df = df[df['party_name'].notnull() & (df['party_name'] != '')]
 
     return df
 
@@ -1286,6 +1346,7 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
 
     # Step 3: Fill remaining NaNs with 0 (non-INR missing rates)
     df['rate_of_exchange'] = df['rate_of_exchange'].fillna(0)
+    df = df[df['party_name'].notnull() & (df['party_name'] != '')]
 
 
     logger.info("Successfully processed the payment voucher data.")
@@ -1380,6 +1441,7 @@ def APIJournalVoucher(file_path: str, material_centre_name: str):
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
 
     df['narration'] = df['narration'].astype(str).str[:500]
+    df = df[df['party_name'].notnull() & (df['party_name'] != '')]
 
     return df[final_cols]
 
