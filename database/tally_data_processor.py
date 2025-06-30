@@ -1177,7 +1177,7 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
 
     return df
 
-def APIPaymentVoucher(file_path: str, material_centre_name: str):y
+def APIPaymentVoucher(file_path: str, material_centre_name: str):
     try:
         logger.info(f"Started processing file: {file_path}")
         data = json_data_convert_amount_in_string(file_path)
