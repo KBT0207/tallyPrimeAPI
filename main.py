@@ -18,8 +18,6 @@ from sqlalchemy.orm import sessionmaker
 from typing import Optional
 
 
-
-
 def quartlyExport(start_q, end_q):
     for i in range(start_q, end_q+1):
         fromdate1, today1 = get_specific_fiscal_quarter_date(i)
@@ -108,7 +106,7 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
 
 if __name__ == "__main__": 
     quartlyExport(1,1)
-    quartlyExport(3,4)
+
     
 
 
