@@ -1149,6 +1149,9 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
     df.rename(columns=cols_rename, inplace=True)
     df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    
+    df['rate_of_exchange'] = np.where(df['currency'].isin(['INR', 'GBP']), 1, 0)
+    
 
     final_cols = [
         'date', 'voucher_no', 'party_name', 'inr_amount',
@@ -1156,8 +1159,6 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
         'currency', 'fcy', 'material_centre','narration'
     ]
     
-
-
     for col in final_cols:
         if col not in df.columns:
             df[col] = ''
@@ -1250,7 +1251,9 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
         'payment_date':"date",'payment_number':"voucher_no"
     }
     df.rename(columns=cols_rename, inplace=True)
-
+    
+    df['rate_of_exchange'] = np.where(df['currency'].isin(['INR', 'GBP']), 1, 0)
+    
     final_cols = [
         'date', 'voucher_no', 'party_name', 'inr_amount',
         'forex_amount', 'rate_of_exchange', 'amount_type',
@@ -1272,7 +1275,6 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
     for col in cols:
         if col in df.columns:
             df[col] = df[col].apply(clean_string)
-            logger.info(f"Cleaned column '{col}'.")
 
     df['narration'] = df['narration'].astype(str).str[:500]
     df = df[final_cols]
@@ -1300,66 +1302,78 @@ def APIJournalVoucher(file_path: str, material_centre_name: str):
         meta=meta_cols,
         errors='ignore'
     )
+
     if df.empty:
         print("No data found in JSON.")
         return pd.DataFrame()
 
+    # Normalize column names immediately
+    df.columns = df.columns.str.lower().str.replace(" ", "_", regex=False)
 
     df['material_centre'] = material_centre_name
     df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
-
-    if 'Voucher Number' in df.columns:
-        df['Voucher Number'] = df['Voucher Number'].fillna('Blank')
+    
+    if 'voucher_number' in df.columns:
+        df['voucher_number'] = df['voucher_number'].fillna('Blank')
     else:
-        df['Voucher Number'] = 'Blank'
+        df['voucher_number'] = 'Blank'
 
-    if 'Rate of Exchange' in df.columns:
-        df['Rate of Exchange'] = df['Rate of Exchange'].fillna('')
+    if 'rate_of_exchange' in df.columns:
+        df['rate_of_exchange'] = df['rate_of_exchange'].fillna('')
     else:
-        df['Rate of Exchange'] = ''
+        df['rate_of_exchange'] = ''
+        
+    # if 'amount_type' in df.columns:
+    #     df['amount_type'] = df['amount_type'].fillna('')
+    # else:
+    #     df['amount_type'] = ''
 
-    df['Rate of Exchange'] = df['Rate of Exchange'].astype(str).str.replace('₹', '', regex=False)
-    df['currency'] = df['Rate of Exchange'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)').fillna('Unknown')
+
+    df['rate_of_exchange'] = df['rate_of_exchange'].astype(str).str.replace('₹', '', regex=False)
+    df['currency'] = df['rate_of_exchange'].str.extract(r'(AU\$|A\$|CAD|£|€|\$)').fillna('Unknown')
     df['currency'] = df['currency'].map(symbol_to_currency)
     df['currency'] = df['currency'].str.replace('Unknown', "").replace("", np.nan)
     df['currency'] = np.where(df['currency'].isnull(), df['material_centre'].map(curr), df['currency'])
-    
-    df['Rate of Exchange'] = df['Rate of Exchange'].str.replace(r'[^\d.\-]', '', regex=True)
-    df['Rate of Exchange'] = pd.to_numeric(df['Rate of Exchange'], errors='coerce').fillna(0).round(2)
-    df['Rate of Exchange'] = np.where((df['currency']=='INR'), 1, 0) 
-    df['Bill Amount'] = df['Bill Amount'].astype(str).str.replace(r'[^\d.\-]', '', regex=True)
-    df['Bill Amount'] = pd.to_numeric(df['Bill Amount'], errors='coerce').fillna(0).round(2)
 
-    df['Forex Amount'] = df['Forex Amount'].astype(str).str.replace(r'[^\d.\-]', '', regex=True)
-    df['Forex Amount'] = pd.to_numeric(df['Forex Amount'], errors='coerce').fillna(0).round(2)
+    df['rate_of_exchange'] = df['rate_of_exchange'].str.replace(r'[^\d.\-]', '', regex=True)
+    df['rate_of_exchange'] = pd.to_numeric(df['rate_of_exchange'], errors='coerce').fillna(0).round(2)
+    df['rate_of_exchange'] = np.where(df['currency'].isin(['INR', 'GBP']), 1, 0)
 
-    df['Amount Type'] = df['Amount Type'].map({'Cr': "Credit", 'Dr': "Debit"})
+    df['bill_amount'] = df['bill_amount'].astype(str).str.replace(r'[^\d.\-]', '', regex=True)
+    df['bill_amount'] = pd.to_numeric(df['bill_amount'], errors='coerce').fillna(0).round(2)
 
-    df.columns = df.columns.str.lower().str.replace(" ", "_", regex=False)
+    df['forex_amount'] = df['forex_amount'].astype(str).str.replace(r'[^\d.\-]', '', regex=True)
+    df['forex_amount'] = pd.to_numeric(df['forex_amount'], errors='coerce').fillna(0).round(2)
+
+    df['amount_type'] = df['amount_type'].map({'Cr': "Credit", 'Dr': "Debit"})
+
     cols_rename = {
-        "partyname": "party_name",'vouchertype':"voucher_type",
-        'bill_amount':"inr_amount", 'voucher_date':"date",
-        'voucher_number':"voucher_no"
-        }
+        "partyname": "party_name",
+        "vouchertype": "voucher_type",
+        "bill_amount": "inr_amount",
+        "voucher_date": "date",
+        "voucher_number": "voucher_no"
+    }
     df.rename(columns=cols_rename, inplace=True)
+
     final_cols = [
         'date', 'voucher_no', 'party_name', 'inr_amount',
         'forex_amount', 'rate_of_exchange', 'amount_type',
-        'currency', 'fcy', 'material_centre','narration'
-        ]
+        'currency', 'fcy', 'material_centre', 'narration'
+    ]
     for col in final_cols:
         if col not in df.columns:
             df[col] = ''
 
-    df = df.applymap(
-        lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
-        )
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y')
+    df = df.applymap(lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x)
+
+    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
 
     df['narration'] = df['narration'].astype(str).str[:500]
-    df = df[final_cols]
-    return df
+
+    return df[final_cols]
+
 
 class TallyDataProcessor:
     def __init__(self, excel_file_path) -> None:
