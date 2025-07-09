@@ -294,6 +294,8 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
     df_final = df_final.applymap(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
+    df_final['item'] = df_final['item'].apply(clean_string)
+
 
     
     df_final.replace([float('inf'), float('-inf')], np.nan, inplace=True)
@@ -516,6 +518,7 @@ def APIPurchaseVoucher(file_path: str, material_centre_name: str):
     df = df.applymap(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
+    df['item'] = df['item'].apply(clean_string)
 
     return df
 
@@ -769,6 +772,9 @@ def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
     df = df.applymap(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
+    
+    df['item'] = df['item'].apply(clean_string)
+
 
     return df
 
@@ -1051,6 +1057,7 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
     df_final = df_final.applymap(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
+    df_final['item'] = df_final['item'].apply(clean_string)
 
 
     return df_final
