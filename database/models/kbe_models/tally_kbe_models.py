@@ -265,3 +265,17 @@ class TallyJournal(KBEBase):
     narration = Column(String(1000), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
+
+
+class TallyOutstanding(KBEBase):
+    __tablename__ = 'tally_outstanding'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(Date, nullable=False)
+    voucher_no = Column(Integer, nullable=False)
+    customer_name = Column(String, nullable=False)
+    due_amount = Column(Float, nullable=False)
+    currency = Column(String(10), nullable=False)
+    material_centre = Column(String, nullable=True)
+    fcy = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
