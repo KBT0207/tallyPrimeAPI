@@ -85,11 +85,17 @@ def json_data_convert_amount_in_string(file):
             content = f.read()
 
         content = content.replace('\\u0004', '')
+        content = content.replace('\\r\\n', '')
         content = re.sub(r'("Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
         content = re.sub(r'("BIll Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
         content = re.sub(r'("Rate Of Exchange":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
         content = re.sub(r'("Rate of Exchange":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
         content = re.sub(r',\s*"Item Group":\s*"Not Applicable"', '', content)
+
+        content = re.sub(r'("OS Balance":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+        content = re.sub(r'("Bill Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+        content = re.sub(r'("Due Amount":\s*)([^"\s][^,\n\r]*)', r'\1"\2"', content)
+
 
         with open(file, 'w', encoding='utf-8') as f:
             f.write(content)
