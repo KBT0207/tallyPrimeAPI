@@ -24,6 +24,7 @@ xlwings = "^0.31.1"
 logtail-python = "^0.2.10"
 cryptography = "^42.0.7"
 pywin32 = "^310"
+mysqlclient = "^2.2.7"
 
 
 [build-system]
