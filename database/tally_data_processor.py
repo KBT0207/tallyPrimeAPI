@@ -1453,6 +1453,69 @@ def APIJournalVoucher(file_path: str, material_centre_name: str):
     return df[final_cols]
 
 
+def APIOutstanding(file_path: str, material_centre_name: str):
+    try:
+        data = json_data_convert_amount_in_string(file_path)
+        raw_data = data['ENVELOPE']['Body']
+    except Exception as e:
+        print(f"json convert error {e}")
+        return pd.DataFrame()
+
+    try:
+        for voucher in raw_data:
+            voucher.setdefault('BillDetails', [])
+    except Exception as e:
+        print(f"Error processing vouchers: {e}")
+        return pd.DataFrame()
+
+    if not raw_data:
+        print("No data found in 'Body'")
+        return pd.DataFrame()
+
+    sample_voucher = raw_data[0]
+    meta_cols = [key for key in sample_voucher.keys() if key != 'BillDetails']
+
+    df = pd.json_normalize(raw_data, record_path='BillDetails', meta=meta_cols, errors='ignore',meta_prefix="_meta")
+    df = df.applymap(lambda x: x.replace('\r\n', '').replace('\\u0004', '') if isinstance(x, str) else x)
+    df.columns = df.columns.str.lower().str.replace(" ","_")
+    cols = {
+        'bill_date':"date",
+        'bill_name':"voucher_no",
+        '_metaledger_name':"customer_name"
+    }
+    df.rename(columns=cols,inplace=True)
+    df = df.dropna(subset=["due_amount"])
+
+    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
+    df['currency'] = df['due_amount'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
+    df['currency'] = df['currency'].map(symbol_to_currency)
+    df['currency'] = df['currency'].fillna("Unknown")
+
+    df['_metarate_of_exchange'] = df['_metarate_of_exchange'].str.replace("₹", "", regex=False)
+    df['extracted_symbol'] = df['_metarate_of_exchange'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)', expand=False)
+    df['mapped_currency'] = df['extracted_symbol'].map(symbol_to_currency)
+    df.loc[(df['currency'] == 'Unknown') & (df['mapped_currency'].notnull()), 'currency'] = df['mapped_currency']
+    df.drop(columns=['extracted_symbol', 'mapped_currency'], inplace=True)
+    df['due_amount'] = df['due_amount'].replace(r'[^\d.]', '', regex=True)
+    df['due_amount'] = pd.to_numeric(df['due_amount'], errors='coerce').fillna(0)
+
+
+    df['currency'] = np.where(
+        (df['currency'] == 'Unknown') & (df['_metaledger_group'].str[:3] == 'INR'),
+        'INR',
+        df['currency']
+    )
+
+    df['material_centre'] = material_centre_name
+    df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
+    final_col = ['date','voucher_no','customer_name','due_amount','currency','material_centre','fcy']
+    df = df[final_col]
+
+
+
+    return df
+
+
 class TallyDataProcessor:
     def __init__(self, excel_file_path) -> None:
         self.excel_file_path = excel_file_path      
@@ -1490,6 +1553,9 @@ class TallyDataProcessor:
 
         if report_type in ['journal']:
              df = APIJournalVoucher(file_path=self.excel_file_path, material_centre_name=company_code)
+
+        if report_type in ['outstanding']:
+             df = APIOutstanding(file_path=self.excel_file_path, material_centre_name=company_code)
         
         
         

@@ -26,6 +26,9 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
     start_year = start_date.year
     start_month = start_date.month
 
+    start_quarter , end_quarter = get_quarter_month_range(current_date)
+    
+
     logger.info(f"Starting Tally Prime API export from {from_date_str} to {to_date_str} for companies: {valid_companies}")
 
     for comp in valid_companies:
@@ -44,10 +47,10 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
+        reports = ['sales', 'sales-return']
         if extra_reports == True:
-            if (start_year == current_year) and (start_month >= 4) and (current_month <= 6):
-                for r in ['item', 'master']:
+            if (start_year == current_year) and (start_month >= start_quarter) and (current_month <= end_quarter):
+                for r in ['item', 'master','outstanding']:
                     if r not in reports:
                         reports.append(r)
 
@@ -111,6 +114,18 @@ def company_validation(company:str, comp_fromdate: str, comp_todate: str):
         return company
     else:
         return None
+    
+
+def get_quarter_month_range(date):
+    month = date.month
+    if 4 <= month <= 6:
+        return (4, 6)
+    elif 7 <= month <= 9:
+        return (7, 9)
+    elif 10 <= month <= 12:
+        return (10, 12)
+    else:
+        return (1, 3)
 
 
 
