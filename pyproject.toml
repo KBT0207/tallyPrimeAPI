@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "busy_tally_pipeline"
+name = "tallyPrimeAPI"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
