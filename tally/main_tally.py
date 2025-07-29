@@ -47,7 +47,7 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return']
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
         if extra_reports == True:
             if (start_year == current_year) and (start_month >= start_quarter) and (current_month <= end_quarter):
                 for r in ['item', 'master','outstanding']:

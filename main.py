@@ -23,7 +23,7 @@ import numpy as np
 def quartlyExport(start_q, end_q):
     for i in range(start_q, end_q+1):
         fromdate1, today1 = get_specific_fiscal_quarter_date(i)
-        main_tally.tally_prime_api_export_data(company=list(kb_daily_exported_data.keys()),fromdate=fromdate1, todate=today1,extra_reports=True)
+        # main_tally.tally_prime_api_export_data(company=list(kb_daily_exported_data.keys()),fromdate=fromdate1, todate=today1,extra_reports=True)
         main_db.delete_tally_data_file_wise(start_date=fromdate1,end_date=today1, file_date=today1, commit=True)
         main_db.import_tally_data(date=today1)
         logger.info(f"Completed This Quarter from {fromdate1} and to date is {today1} and quarter is {i}")
@@ -101,97 +101,6 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
     
     return {"imported": [], "skipped": []}
 
-
-
-def testing(file_path: str, material_centre_name: str):
-    try:
-        data = json_data_convert_amount_in_string(file_path)
-        raw_data = data['ENVELOPE']['Body']
-    except Exception as e:
-        print(f'Error loading data: {e}')
-        return pd.DataFrame()
-
-    for voucher in raw_data:
-        voucher.setdefault('Ledger', [])
-        voucher.setdefault('Bank Details', [])
-        for ledger in voucher['Ledger']:
-            ledger.setdefault('Bill Allocations', [])
-
-    meta_cols = [col for col in raw_data[0].keys() if col not in ['Ledger', 'Bank Details', 'Bill Allocations']]
-
-    df = pd.json_normalize(
-        raw_data,
-        record_path='Ledger',
-        meta=meta_cols,
-        errors='ignore'
-    )
-
-    if df.empty:
-        print("No data found in JSON.")
-        return pd.DataFrame()
-
-
-    df['Receipt No'] = df.get('Receipt No', '').fillna('Blank')
-    df['Rate Of Exchange'] = df.get('Rate Of Exchange', '')
-    df['material_centre'] = material_centre_name
-
-    df['Amount'] = df['Amount'].str.replace(r'[^\d.\-]', '', regex=True)
-    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce').fillna(0).round(2)
-
-    df['Rate Of Exchange'] = df['Rate Of Exchange'].astype(str).str.replace("₹", "")
-
-    df['currency'] = df['Rate Of Exchange'].str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
-    df['currency'] = df['currency'].map(symbol_to_currency).fillna("Unknown")
-    df['currency'] = df['currency'].str.replace('Unknown', "").replace("", np.nan)
-
-    df['currency'] = np.where(df['currency'].isnull(), df['material_centre'].map(curr), df['currency'])
-    df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
-
-    df['Rate Of Exchange'] = df['Rate Of Exchange'].str.replace(r'[^\d.\-]', '', regex=True)
-    df['Rate Of Exchange'] = pd.to_numeric(df['Rate Of Exchange'], errors='coerce').fillna(0).round(2)
-
-    df['Amount Type'] = df['Amount Type'].map({'Cr': "Credit", 'Dr': "Debit"})
-
-    cols = ['Amount', 'Forex Amount']
-    df.loc[df['Amount Type'] == 'Debit', cols] *= -1
-
-    df.columns = df.columns.str.lower().str.replace(" ", "_", regex=False)
-    cols_rename = {
-        "partyname": "party_name", 'amount':"inr_amount",
-        "receipt_date":"date",'receipt_no':"voucher_no"
-        }
-    df.rename(columns=cols_rename, inplace=True)
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
-    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-    
-    df['rate_of_exchange'] = np.where(df['currency'].isin(['INR', 'GBP']), 1, 0)
-    
-
-    final_cols = [
-        'date', 'voucher_no', 'party_name', 'inr_amount',
-        'forex_amount', 'rate_of_exchange', 'amount_type',
-        'currency', 'fcy', 'material_centre','narration'
-    ]
-    
-    for col in final_cols:
-        if col not in df.columns:
-            df[col] = ''
-
-    cols = ['voucher_no', 'party_name', 'amount_type', 'currency','material_centre','narration']
-    for col in cols:
-        if col in df.columns:
-            df[col] = df[col].apply(clean_string)
-
-    df['narration'] = df['narration'].str[:500]
-
-    df = df.applymap(
-        lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
-        )
-
-    df = df[final_cols]
-    df = df[df['party_name'].notnull() & (df['party_name'] != '')]
-
-    return df
 
 
 

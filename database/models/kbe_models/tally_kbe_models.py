@@ -269,13 +269,13 @@ class TallyJournal(KBEBase):
 
 class TallyOutstanding(KBEBase):
     __tablename__ = 'tally_outstanding'
-    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     date = Column(Date, nullable=False)
-    voucher_no = Column(Integer, nullable=False)
-    customer_name = Column(String, nullable=False)
+    voucher_no = Column(String(255), nullable=False)
+    customer_name = Column(String(255), nullable=False)
     due_amount = Column(Float, nullable=False)
     currency = Column(String(10), nullable=False)
-    material_centre = Column(String, nullable=True)
+    material_centre = Column(String(100), nullable=True)
     fcy = Column(String(10), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-
