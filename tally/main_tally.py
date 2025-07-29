@@ -6,11 +6,10 @@ from utils.common_utils import kb_daily_exported_data
 from datetime import datetime
 from logging_config import logger
 from typing import Optional
-from test import wait_if_in_range
+
 
 
 def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra_reports:Optional[bool] = True):
-    wait_if_in_range()
     valid_companies = []
     for check_company in company:
         comp_valid = company_validation(check_company, fromdate, todate)
