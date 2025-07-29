@@ -57,21 +57,32 @@ def find_img(img:str, timeout:int = None, conf: Union[float, int] = 0.9, gs:bool
             continue
     pg.moveTo(location,duration=0.1)
 
-def forex_transaction_click_yes(image: Optional[str] = None):
+def forex_transaction_click_yes(report_type):
     pg.hotkey("ctrl", 'b')
     time.sleep(2)
-    img_path = image if image else "tally/images/forex.png"
+
+    if report_type == 'outstanding':
+        img_path = 'tally/images/outstanding_curr_enable.png'
+    else:
+        img_path = 'tally/images/forex.png'
+
     loc = None
-    while loc == None:
+
+    while loc is None:
         try:
             loc = pg.locateOnScreen(img_path, confidence=0.9)
             if loc:
                 time.sleep(1)
-                pg.click(loc)
-                pg.press("enter")
+
+                if report_type == 'outstanding':
+                    pg.click(loc)
+                    time.sleep(1)
+                    pg.press("enter")
+                else:
+                    pg.press("enter")
+
                 time.sleep(1)
                 pg.hotkey("ctrl", 'a')
-                time.sleep(1)
         except Exception as e:
             print(f"Error during forex transaction click: {e}")
         time.sleep(0.5)
@@ -105,8 +116,7 @@ def start_tally() -> None:
     time.sleep(1)
     pg.typewrite(r"C:\Program Files\TallyPrime\tally.exe", interval=0.1)
     pg.press('enter') 
-     
-    
+       
 def tally_data_server():
     location = None
     while location == None:
@@ -152,7 +162,6 @@ def phaltan_rdc():
             location = pg.locateOnScreen('tally/images/phaltan_rdc.png', confidence= 0.9)
         except:
             time.sleep(1)
-    
     
 def select_company(company_code):
     path = r'\\HO-NAS\Server Data\IT & MIS\Jovo Tally\Data'
@@ -407,10 +416,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
     invalid_report_types = {"item", "master"}
 
     if any(fcy in material_centre for fcy in fcy_list) and reports_type not in invalid_report_types:
-        if reports_type == "outstanding":
-            forex_transaction_click_yes(image='tally/images/outstanding_curr_enable.png')
-        else:
-            forex_transaction_click_yes()
+            forex_transaction_click_yes(report_type=reports_type)
 
 
     try:

@@ -45,16 +45,14 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        # reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
-        reports = ['outstanding']
+        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
+        
         if extra_reports == True:
             if (start_year == current_year) and (start_month >= start_quarter) and (current_month <= end_quarter):
                 for r in ['item', 'master',"outstanding"]:
                     if r not in reports:
                         reports.append(r)
-
         logger.info(f"Starting report export for: {reports}")
-
         try:
             time.sleep(1)
             no_vch_entered_in_tally = 'tally/images/no_voucher_enterd_in_comp.png'
