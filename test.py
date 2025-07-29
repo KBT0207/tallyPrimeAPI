@@ -1,26 +1,31 @@
-from datetime import datetime, time, timedelta
-import time as t  # Avoid conflict with datetime.time
+import pandas as pd
 
-def wait_if_in_range():
-    now = datetime.now().time()
+# Define the flight data
+data = {
+    ("DXB-GOI", "IX 839", "Capacity"):       [2000, None, None, 2000, 2000, 2000, 2000],
+    ("DXB-GOI", "IX 839", "Utilization"):    [1500, None, None, 0, 0, 2000, 0],
+    ("DXB-GOI", "IX 839", "Util %"):         ["75%", None, None, "0%", "0%", "100%", "0%"],
+    
+    ("DXB-PNQ", "SG", "Capacity"):           [1700]*7,
+    ("DXB-PNQ", "SG", "Utilization"):        [0]*7,
+    ("DXB-PNQ", "SG", "Util %"):             ["0%"]*7,
 
-    # Define time range: from 11:00 PM to 12:30 AM (next day)
-    start_time = time(23, 0)   # 11:00 PM
-    end_time = time(0, 30)     # 12:30 AM
+    ("SHJ-GOX", "G9 493", "Capacity"):       [None, None, 2000, 2000, 2000, 2000, 2000],
+    ("SHJ-GOX", "G9 493", "Utilization"):    [None, None, 1200, 0, 1200, 0, 1200],
+    ("SHJ-GOX", "G9 493", "Util %"):         [None, None, "60%", "0%", "60%", "0%", "60%"],
 
-    if now >= start_time or now < end_time:
-        # Calculate how many seconds to sleep until 12:30 AM
-        now_dt = datetime.now()
-        target_dt = now_dt.replace(hour=0, minute=30, second=0, microsecond=0)
+    ("BAH-GOI", "GF 285", "Capacity"):       [2000, 2000, None, 2000, None, 2000, 2000],
+    ("BAH-GOI", "GF 285", "Utilization"):    [0, 0, None, 0, None, 0, 0],
+    ("BAH-GOI", "GF 285", "Util %"):         ["0%", "0%", None, "0%", None, "0%", "0%"],
 
-        # If current time is already past 12:30 AM, wait until next day's 12:30 AM
-        if now >= end_time:
-            target_dt += timedelta(days=1)
+    ("BAH-GOI", "GF 287", "Capacity"):       [None, None, 2000, None, 2000, None, None],
+    ("BAH-GOI", "GF 287", "Utilization"):    [None, None, 600, None, 0, None, None],
+    ("BAH-GOI", "GF 287", "Util %"):         [None, None, "30%", None, "0%", None, None]
+}
 
-        seconds_to_sleep = (target_dt - now_dt).total_seconds()
-        print(f"Sleeping for {seconds_to_sleep:.0f} seconds until 12:30 AM...")
-        t.sleep(seconds_to_sleep)
-    else:
-        print("Current time is outside the range. No need to wait.")
+# Create DataFrame
+index = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+df = pd.DataFrame(data, index=index)
 
-
+# Save to Excel
+df.to_excel("Flight_Schedule_Report.xlsx")

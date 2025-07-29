@@ -17,7 +17,10 @@ def get_api_date_and_time(file: str) -> Tuple[date, dt_time]:
     try:
         base = file.rsplit("_", 1)[0]
         parts = base.split("_")[-6:]
-        day, month, year, hour, minute, sec = map(int, parts)
+        digits = [int(match) for part in parts for match in re.findall(r'\d+', part)]
+        if len(digits) != 6:
+            raise ValueError("Expected 6 numeric parts for date and time.")
+        day, month, year, hour, minute, sec = digits
         return date(year, month, day), dt_time(hour, minute, sec)
     except (ValueError, IndexError) as e:
         raise ValueError(f"Invalid filename format: {file}") from e

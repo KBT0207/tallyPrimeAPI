@@ -1485,13 +1485,16 @@ def APIOutstanding(file_path: str, material_centre_name: str):
     }
     df.rename(columns=cols,inplace=True)
     df = df.dropna(subset=["due_amount"])
-
     df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
     df['currency'] = df['due_amount'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)')
     df['currency'] = df['currency'].map(symbol_to_currency)
     df['currency'] = df['currency'].fillna("Unknown")
 
-    df['_metarate_of_exchange'] = df['_metarate_of_exchange'].str.replace("₹", "", regex=False)
+    if '_metarate_of_exchange' in df.columns:
+        df['_metarate_of_exchange'] = df['_metarate_of_exchange'].astype(str).str.replace("₹", "", regex=False)
+    else:
+        print("Column '_metarate_of_exchange' not found in the DataFrame.")
+
     df['extracted_symbol'] = df['_metarate_of_exchange'].astype(str).str.extract(r'(AU\$|A\$|CAD|£|€|\$)', expand=False)
     df['mapped_currency'] = df['extracted_symbol'].map(symbol_to_currency)
     df.loc[(df['currency'] == 'Unknown') & (df['mapped_currency'].notnull()), 'currency'] = df['mapped_currency']

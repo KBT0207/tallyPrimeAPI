@@ -16,7 +16,7 @@ from xlwings import view
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from typing import Optional
-from tally.api_utils  import fcy_comp, symbol_to_currency, json_data_convert_amount_in_string, curr, extract_all_postal_codes, clean_string
+from tally.api_utils  import fcy_comp
 import numpy as np
 
 
@@ -42,6 +42,7 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
         # Load and normalize column names
         df = pd.read_excel(file_path)
         df.columns = df.columns.str.lower().str.replace(" ", "_")
+        df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
 
         # Required columns
         all_cols = ['item_name', 'item_alias', 'parent', 'unit',
@@ -62,7 +63,7 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
             'MP KBAIPL', 'Thane KBEIPL', 'Thane Fab Fresh', 'Nagar KBEIPL', 'Gujarat KBEIPL',
             'Cargo KBEIPL', 'Nagar NA KBE', 'Nagar A KBE', 'Gujarat KBE', 'MP KBE',
             'JDS KBE', 'Cargo KBE', 'Thane Orbit', 'Gujarat Orbit', 'Thane Frexotic',
-            'Gujarat KBAIPL', 'Thane KBAIPL', 'UK KB Veg',
+            'Gujarat KBAIPL', 'Thane KBAIPL', 'UK KB Veg',"Phaltan NA KBE"
         ]
 
         # Check for invalid material centres
@@ -82,6 +83,7 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
         # Ensure 'conversion' is numeric
         if 'conversion' in df.columns:
             df['conversion'] = pd.to_numeric(df['conversion'], errors='coerce')
+
 
         # Import into DB
         db_crud = DatabaseCrud(db_connector=kbe_engine)
@@ -108,10 +110,6 @@ def item_mapping_import(file_path: Optional[str]) -> dict:
 
 if __name__ == "__main__": 
     quartlyExport(3,4)
-
-    
-
-
 
 
 

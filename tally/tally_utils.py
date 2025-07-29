@@ -9,6 +9,7 @@ from tally.api_utils import rename_latest_file,select_all_data
 from datetime import datetime
 
 from typing import Union
+from typing import Optional
 
 load_dotenv('.env')
 
@@ -56,19 +57,32 @@ def find_img(img:str, timeout:int = None, conf: Union[float, int] = 0.9, gs:bool
             continue
     pg.moveTo(location,duration=0.1)
 
-def forex_transaction_click_yes():
+def forex_transaction_click_yes(report_type):
     pg.hotkey("ctrl", 'b')
     time.sleep(2)
+
+    if report_type == 'outstanding':
+        img_path = 'tally/images/outstanding_curr_enable.png'
+    else:
+        img_path = 'tally/images/forex.png'
+
     loc = None
-    while loc == None:
+
+    while loc is None:
         try:
-            loc = pg.locateOnScreen("tally/images/forex.png", confidence=0.9)
+            loc = pg.locateOnScreen(img_path, confidence=0.9)
             if loc:
                 time.sleep(1)
-                pg.press("enter")
+
+                if report_type == 'outstanding':
+                    pg.click(loc)
+                    time.sleep(1)
+                    pg.press("enter")
+                else:
+                    pg.press("enter")
+
                 time.sleep(1)
                 pg.hotkey("ctrl", 'a')
-                time.sleep(1)
         except Exception as e:
             print(f"Error during forex transaction click: {e}")
         time.sleep(0.5)
@@ -102,8 +116,7 @@ def start_tally() -> None:
     time.sleep(1)
     pg.typewrite(r"C:\Program Files\TallyPrime\tally.exe", interval=0.1)
     pg.press('enter') 
-     
-    
+       
 def tally_data_server():
     location = None
     while location == None:
@@ -150,9 +163,8 @@ def phaltan_rdc():
         except:
             time.sleep(1)
     
-    
 def select_company(company_code):
-    path = r'\\ho-nas\Server Data\IT & MIS\Jovo Tally\Data'
+    path = r'\\HO-NAS\Server Data\IT & MIS\Jovo Tally\Data'
     phaltan_rdc_comp = ['KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)', 'Kay Bee Exports - Agri Division Phaltan 21-22', 'KAY BEE EXPORTS (PHALTAN) FY21-22']
     if company_code in phaltan_rdc_comp:
         specify_path()
@@ -180,8 +192,9 @@ def select_company(company_code):
     pg.press('enter')
     find_img('tally/images/tally_gateway.png')  
 
-def APIchange_period(from_date, to_date):
-    find_img('tally/images/apiChangeDate.png')
+def APIchange_period(from_date, to_date, img: Optional[str] = None):
+    first_image = img if img else 'tally/images/apiChangeDate.png'
+    find_img(first_image)
     time.sleep(2)
     pg.hotkey("alt", "f2")
     pg.typewrite(from_date, interval=0.2)
@@ -236,8 +249,8 @@ def api_helper_outstanding(fromdate, to_date):
         time.sleep(1)
         find_img('tally/images/getAPIDataTypeReport.png')
         time.sleep(1)
-        pg.press('p')
-        APIchange_period(from_date=fromdate, to_date=to_date)
+        pg.press('u')
+        APIchange_period(from_date=fromdate, to_date=to_date, img="tally/images/apiOutstandingChangeDate.png")
         return None
 
 def api_helper_sales(fromdate, to_date):
@@ -403,7 +416,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
     invalid_report_types = {"item", "master"}
 
     if any(fcy in material_centre for fcy in fcy_list) and reports_type not in invalid_report_types:
-        forex_transaction_click_yes()
+            forex_transaction_click_yes(report_type=reports_type)
 
 
     try:
@@ -426,7 +439,7 @@ def api_exports_data(material_centre: str, todate, reports_type: str, esc: int):
         'purchase-return': ('alt', 'l'),
         'item': ('alt', 'v'),
         'master': ('alt', 'j'),
-        'outstanding': ('alt', 'h'),
+        'outstanding': ('alt', 's'),
     }
 
     hotkey = hotkeys.get(reports_type)
