@@ -6,11 +6,9 @@ from utils.common_utils import kb_daily_exported_data
 from datetime import datetime
 from logging_config import logger
 from typing import Optional
-from test import wait_if_in_range
 
 
 def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra_reports:Optional[bool] = True):
-    wait_if_in_range()
     valid_companies = []
     for check_company in company:
         comp_valid = company_validation(check_company, fromdate, todate)
@@ -47,10 +45,11 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return']
+        # reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
+        reports = ['outstanding']
         if extra_reports == True:
             if (start_year == current_year) and (start_month >= start_quarter) and (current_month <= end_quarter):
-                for r in ['item', 'master','outstanding']:
+                for r in ['item', 'master',"outstanding"]:
                     if r not in reports:
                         reports.append(r)
 
@@ -115,7 +114,6 @@ def company_validation(company:str, comp_fromdate: str, comp_todate: str):
     else:
         return None
     
-
 def get_quarter_month_range(date):
     month = date.month
     if 4 <= month <= 6:
