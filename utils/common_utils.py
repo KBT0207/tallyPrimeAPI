@@ -76,7 +76,7 @@ def get_specific_fiscal_quarter_date(q_number: int):
 
 
 from database.models.kbe_models.tally_kbe_models import (TallySalesDetailed,TallyPurchaseDetailed, TallyPurchaseReturnDetailed,TallySalesReturnDetailed,
-                                                         TallyMasters,TallyItems,TallyItemsMapping,TallyReceipt,TallyPayments,TallyJournal,TallyOutstanding
+                                                         TallyMasters,TallyItems,TallyItemsMapping,TallyReceipt,TallyPayments,TallyJournal,TallyOutstanding,TallyOutstandingMapping
                                                          )
 
 
@@ -129,7 +129,8 @@ tally_tables = {
                 'tally_receipt_detailed':TallyReceipt,
                 'tally_payments_detailed':TallyPayments,
                 'tally_journal_detailed':TallyJournal,
-                "tally_outstanding":TallyOutstanding
+                "tally_outstanding":TallyOutstanding,
+                "tally_outstanding_mapping":TallyOutstandingMapping,
                 }
 
 report_table_map = {
