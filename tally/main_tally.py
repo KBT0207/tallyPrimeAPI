@@ -8,6 +8,16 @@ from logging_config import logger
 from typing import Optional
 
 
+outstanding_companies = [
+    "Frexotic Foods (FCY)",
+    "Kay Bee Exports (FCY) FROM 20-21",
+    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (FCY)",
+    "Orbit Exports (FCY)",
+    "Kay Bee Agro International Pvt Ltd (FCY)",
+    "Freshnova Pvt Ltd (FCY)",
+    "KAY BEE FRUITS INC",
+    "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-25)"]
+
 
 def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra_reports:Optional[bool] = True):
     valid_companies = []
@@ -46,13 +56,16 @@ def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra
         logger.debug(f"Material Centre for {comp}: {mc}")
         logger.info(f"Selected company: {comp}")
     
-        reports = ['sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
+        reports = [ 'sales', 'sales-return', 'purchase', 'purchase-return','receipt','payments','journal']
         
+
         if extra_reports == True:
             if (start_year == current_year) and (start_month >= start_quarter) and (current_month <= end_quarter):
-                for r in ['item', 'master',"outstanding"]:
+                for r in ['item', 'master']:
                     if r not in reports:
                         reports.append(r)
+            if comp in outstanding_companies and 'outstanding' not in reports:
+                reports.append('outstanding')
         logger.info(f"Starting report export for: {reports}")
         try:
             time.sleep(1)

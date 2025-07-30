@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Column, Integer, String, Date, BigInteger, Float, DateTime, func, DECIMAL
+from sqlalchemy import MetaData, Column, Integer, String, Date, BigInteger, Float, DateTime, func, DECIMAL,UniqueConstraint
 from database.models.base import KBEBase
 
 
@@ -278,4 +278,20 @@ class TallyOutstanding(KBEBase):
     currency = Column(String(10), nullable=False)
     material_centre = Column(String(100), nullable=True)
     fcy = Column(String(10), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+
+class TallyOutstandingMapping(KBEBase):
+    __tablename__ = 'tally_outstanding_mapping'
+    __table_args__ = (
+        UniqueConstraint('particulars', 'material_centre', name='uix_particulars_material_centre'),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    particulars = Column(String(255), nullable=False)
+    material_centre = Column(String(100), nullable=False)
+    credit_period = Column(Float, nullable=False, default=0)
+    country = Column(String(100), nullable=True)
+    responsible = Column(String(100), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
