@@ -8,6 +8,7 @@ from logging_config import logger
 from typing import Optional
 
 
+
 def tally_prime_api_export_data(company: list, fromdate: str, todate: str, extra_reports:Optional[bool] = True):
     valid_companies = []
     for check_company in company:
