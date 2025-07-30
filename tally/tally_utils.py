@@ -250,8 +250,14 @@ def api_helper_outstanding(fromdate, to_date):
         find_img('tally/images/getAPIDataTypeReport.png')
         time.sleep(1)
         pg.press('u')
-        APIchange_period(from_date=fromdate, to_date=to_date, img="tally/images/apiOutstandingChangeDate.png")
-        return None
+        time.sleep(2)
+        try:
+            pg.locateOnScreen("tally/images/no_access.png",confidence=0.9)
+            pg.press("esc",presses=5,interval=2)
+            return 'No Reports'
+        except Exception as e:
+            APIchange_period(from_date=fromdate, to_date=to_date, img="tally/images/apiOutstandingChangeDate.png")
+            return None
 
 def api_helper_sales(fromdate, to_date):
     pg.press('down')
