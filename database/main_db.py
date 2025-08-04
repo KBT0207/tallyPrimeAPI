@@ -70,7 +70,7 @@ def delete_tally_data_file_wise(start_date: str, end_date: str, file_date: str, 
 
             logger.info(f"Deleting data from table '{table_name}' for material centre '{mc}' based on file '{file_name}'.")
 
-            if table_name in ['tally_masters', 'tally_items']:
+            if table_name in ['tally_masters', 'tally_items','tally_outstanding']:
                 delete_tally_data_mc_wise.delete_tally_material_centre_and_datewise(
                     table_name=table_name,
                     start_date=None,
