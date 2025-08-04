@@ -4,15 +4,19 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 from datetime import datetime
 
-today_date = datetime.now().strftime('%d-%b-%Y').replace(':', '-')
+# Custom UTF-8 encoded TimedRotatingFileHandler
+class TimedRotatingFileHandlerUtf8(TimedRotatingFileHandler):
+    def __init__(self, filename, when='midnight', interval=1, backupCount=7, encoding='utf-8', **kwargs):
+        super().__init__(filename, when=when, interval=interval, backupCount=backupCount, encoding=encoding, **kwargs)
 
-current_directory = os.getcwd()
+# Register the custom handler class so logging can use it by name
+logging.handlers.TimedRotatingFileHandlerUtf8 = TimedRotatingFileHandlerUtf8
 
-log_directory = os.path.join(current_directory, 'logs')
+today_date = datetime.now().strftime('%d-%b-%Y')
+log_directory = 'E:/logs'
 log_file = os.path.join(log_directory, f"main_{today_date}.log")
 
-if not os.path.exists(log_directory):
-    os.makedirs(log_directory)
+os.makedirs(log_directory, exist_ok=True)
 
 LOGGING_CONFIG = {
     'version': 1,
@@ -27,22 +31,18 @@ LOGGING_CONFIG = {
             'formatter': 'standard',
             'level': 'INFO'
         },
-
         'file_handler': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandlerUtf8',  # use custom UTF-8-safe handler
             'filename': log_file,
             'when': 'midnight',
             'interval': 1,
             'backupCount': 30,
-            'formatter': 'standard'
+            'formatter': 'standard',
         }
     },
     'loggers': {
         '': {
-            'handlers': [
-                'console_handler',
-                'file_handler',
-            ],
+            'handlers': ['console_handler', 'file_handler'],
             'level': 'INFO',
             'propagate': False
         }
@@ -50,5 +50,4 @@ LOGGING_CONFIG = {
 }
 
 logging.config.dictConfig(LOGGING_CONFIG)
-logger = logging.getLogger('main')
-
+logger = logging.getLogger("main")
