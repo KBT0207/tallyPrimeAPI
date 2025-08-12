@@ -1504,16 +1504,19 @@ def APIOutstanding(file_path: str, material_centre_name: str):
 
     df['material_centre'] = material_centre_name
     df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
-    df['currency'] = np.where(
-        (df['currency'] == 'Unknown') & (df['_metaledger_group'].str[:3] == 'INR'),
-        'INR',
-        df['currency']
-    )
 
+    
     df['currency'] = df['currency'].str.replace('Unknown', "").replace("", np.nan)
     df['currency'] = np.where(df['currency'].isnull(), df['material_centre'].map(curr), df['currency'])
+
+    df['currency'] = np.where(
+        (df['currency'].isnull()) & (df['rate_of_exchange'] == '- * -'),
+        "Undefined",
+        df['currency']
+    )
     final_col = ['date','voucher_no','customer_name','due_amount','currency','material_centre','fcy']
     df = df[final_col]
+    
 
 
 
