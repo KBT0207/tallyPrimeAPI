@@ -47,7 +47,7 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         if key not in meta_cols:
             meta_cols.append(key)
 
-    df_item = pd.json_normalize(raw_data, errors='ignore', record_path='Items', meta=meta_cols)
+    df_item = pd.json_normalize(raw_data, errors='ignore', record_path='Items', meta=meta_cols + ["Bill Ref No"])
 
 
     if not df_item.empty:
@@ -101,6 +101,7 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         meta=['VOUCHERKEY', 'Voucher Date', 'Voucher Number', 'Voucher Type', 'Party Name'],
         errors='ignore',
     )
+
 
     if not df_ledger.empty:
         df_ledger['Voucher Number'] = df_ledger.get('Voucher Number', '').fillna('Blank')
@@ -200,6 +201,7 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
                 df_ledger[i] = 0
 
     df_final = pd.merge(left=df_item, right=df_ledger, how='outer', on=merge_col) 
+
     df_final['currency'] = df_final['currency'].fillna('Unknown')
 
     req_zero = ['cgst_amt', 'sgst_amt', 'igst_amt',  'other_amt','freight_amt','dca_amt','cf_amt']

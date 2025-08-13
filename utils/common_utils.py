@@ -205,9 +205,9 @@ kb_daily_exported_data = {
     "Kay Bee veg Ltd - FY 2020-21 -(from 1-Apr-20)": ["UK KB Veg", '2020-04-01', '2025-03-31'],
     # # --- Phaltan Companies (Bottom) ---
 
-    "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)": ["Phaltan KBEIPL",'2023-04-01', current_date],
-    "Kay Bee Exports - Agri Division Phaltan 21-22": ["Phaltan NA KBE",'2021-04-01', current_date],
-    # kindly update company date
-    "KAY BEE EXPORTS (PHALTAN) FY21-22": ["Phaltan A KBE",'2021-04-01', current_date],
+    # "KAY BEE EXPORTS INTERNATIONAL PVT LTD (Phaltan NA) - (from 1-Apr-23)": ["Phaltan KBEIPL",'2023-04-01', current_date],
+    # "Kay Bee Exports - Agri Division Phaltan 21-22": ["Phaltan NA KBE",'2021-04-01', current_date],
+    # # kindly update company date
+    # "KAY BEE EXPORTS (PHALTAN) FY21-22": ["Phaltan A KBE",'2021-04-01', current_date],
 }
 
