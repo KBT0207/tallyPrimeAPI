@@ -65,15 +65,15 @@ class DatabaseConnector:
         return f'mysql+pymysql://{encoded_username}:{encoded_password}@{self.host}:{self.port}/{self.database}?autocommit=false'
 
 
-USERNAME = os.getenv('DB_USERNAME')
-PASSWORD = os.getenv('DB_PASSWORD')
-HOST = os.getenv('DB_HOST')
-PORT = os.getenv('DB_PORT')
-KBBIO_DATABASE = os.getenv('KBBIO_DATABASE')
+USERNAME = os.getenv('DB_USERNAME','root')
+PASSWORD = os.getenv('DB_PASSWORD','')
+HOST = os.getenv('DB_HOST','192.168.0.50')
+PORT = os.getenv('DB_PORT','3306')
+KBBIO_DATABASE = os.getenv('KBBIO_DATABASE', 'kbbio')
 
-KBE_DATABASE = os.getenv('KBE_DATABASE')
+KBE_DATABASE = os.getenv('KBE_DATABASE','kbe')
 
-KBExports_DATABASE = os.getenv('KBExports_DATABASE')
+KBExports_DATABASE = os.getenv('KBExports_DATABASE','kbexports')
 
 
 

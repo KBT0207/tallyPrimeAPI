@@ -293,7 +293,7 @@ def APISalesVoucher(file_path: str, material_centre_name: str):
         if col not in df_final.columns:
             df_final[col] = ''
     df_final = df_final[final_columns]
-    df_final = df_final.applymap(
+    df_final = df_final.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
     df_final['item'] = df_final['item'].apply(clean_string)
@@ -517,7 +517,7 @@ def APIPurchaseVoucher(file_path: str, material_centre_name: str):
 
     df['narration'] = df['narration'].str[:500]
     df = df[final_col]
-    df = df.applymap(
+    df = df.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
     df['item'] = df['item'].apply(clean_string)
@@ -771,7 +771,7 @@ def APIPurchaseReturnVoucher(file_path: str, material_centre_name: str):
         if col not in df.columns:
             df[col] = ''
     df = df[final_col]
-    df = df.applymap(
+    df = df.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
     
@@ -1056,7 +1056,7 @@ def APISalesReturnVoucher(file_path: str, material_centre_name: str):
 
     df_final['narration'] = df_final['narration'].str[:500]
     df_final = df_final[final_columns]
-    df_final = df_final.applymap(
+    df_final = df_final.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
     df_final['item'] = df_final['item'].apply(clean_string)
@@ -1096,7 +1096,7 @@ def APIMaster(file_path: str, material_centre_name: str):
 
     for col in ['party_name', 'party_alias', 'parent', 'address', 'address_2', 'address_3', 'address_4']:
         df[col] = df[col].apply(clean_string)
-    df = df.applymap(
+    df = df.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
 
@@ -1138,7 +1138,7 @@ def APIItems(file_path: str, material_centre_name: str):
         df["material_centre"] = material_centre_name
         
         df['fcy'] = np.where(df['material_centre'].isin(fcy_comp), 'Yes', 'No')
-        df = df.applymap(
+        df = df.map(
             lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
             )
 
@@ -1238,7 +1238,7 @@ def APIReceiptVoucher(file_path: str, material_centre_name: str):
 
     df['narration'] = df['narration'].str[:500]
 
-    df = df.applymap(
+    df = df.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
         )
 
@@ -1334,7 +1334,7 @@ def APIPaymentVoucher(file_path: str, material_centre_name: str):
             df[col] = ''
             logger.info(f"Column '{col}' was missing, added default empty values.")
 
-    df = df.applymap(
+    df = df.map(
         lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x
     )
     df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y')
@@ -1444,7 +1444,7 @@ def APIJournalVoucher(file_path: str, material_centre_name: str):
         if col not in df.columns:
             df[col] = ''
 
-    df = df.applymap(lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x)
+    df = df.map(lambda x: x.replace("x000D", "").replace("\r\n", "") if isinstance(x, str) else x)
 
     df['date'] = pd.to_datetime(df['date'], format='%d-%b-%y', errors='coerce')
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
@@ -1478,7 +1478,7 @@ def APIOutstanding(file_path: str, material_centre_name: str):
     meta_cols = [key for key in sample_voucher.keys() if key != 'BillDetails']
 
     df = pd.json_normalize(raw_data, record_path='BillDetails', meta=meta_cols, errors='ignore',meta_prefix="_meta")
-    df = df.applymap(lambda x: x.replace('\r\n', '').replace('\\u0004', '') if isinstance(x, str) else x)
+    df = df.map(lambda x: x.replace('\r\n', '').replace('\\u0004', '') if isinstance(x, str) else x)
     df.columns = df.columns.str.lower().str.replace(" ","_")
     cols = {
         'bill_date':"date",
